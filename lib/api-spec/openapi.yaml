@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Shikkha AI - Free Bengali AI study companion
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: subjects
+    description: Subjects and chapters
+  - name: questions
+    description: MCQ practice questions
+  - name: tests
+    description: Model tests
+  - name: progress
+    description: User progress tracking
+  - name: leaderboard
+    description: Leaderboard
+  - name: anthropic
+    description: AI tutor chat operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,337 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /subjects:
+    get:
+      operationId: listSubjects
+      tags: [subjects]
+      summary: List all subjects with chapter counts
+      responses:
+        "200":
+          description: List of subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subject"
+  /subjects/{id}/chapters:
+    get:
+      operationId: listChaptersBySubject
+      tags: [subjects]
+      summary: List chapters in a subject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of chapters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Chapter"
+
+  /chapters/{id}/questions:
+    get:
+      operationId: listQuestionsByChapter
+      tags: [questions]
+      summary: List MCQs in a chapter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+
+  /practice/submit:
+    post:
+      operationId: submitPracticeAnswer
+      tags: [questions]
+      summary: Submit a practice answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswerBody"
+      responses:
+        "200":
+          description: Answer result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResult"
+
+  /tests:
+    get:
+      operationId: listTests
+      tags: [tests]
+      summary: List all model tests
+      responses:
+        "200":
+          description: List of tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModelTest"
+  /tests/{id}:
+    get:
+      operationId: getTest
+      tags: [tests]
+      summary: Get a model test with its questions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelTestWithQuestions"
+  /tests/{id}/submit:
+    post:
+      operationId: submitTest
+      tags: [tests]
+      summary: Submit a completed test
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitTestBody"
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResult"
+  /tests/attempts/recent:
+    get:
+      operationId: listRecentAttempts
+      tags: [tests]
+      summary: Recent test attempts (wow endpoint)
+      responses:
+        "200":
+          description: Recent attempts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestAttempt"
+
+  /progress/summary:
+    get:
+      operationId: getProgressSummary
+      tags: [progress]
+      summary: Overall progress summary (wow endpoint)
+      responses:
+        "200":
+          description: Progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressSummary"
+  /progress/by-subject:
+    get:
+      operationId: getProgressBySubject
+      tags: [progress]
+      summary: Progress breakdown by subject (wow endpoint)
+      responses:
+        "200":
+          description: Subject-wise progress
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubjectProgress"
+  /progress/streak:
+    get:
+      operationId: getStreak
+      tags: [progress]
+      summary: Daily study streak (wow endpoint)
+      responses:
+        "200":
+          description: Streak info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakInfo"
+  /progress/activity:
+    get:
+      operationId: getActivityFeed
+      tags: [progress]
+      summary: Recent activity feed (wow endpoint)
+      responses:
+        "200":
+          description: Activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Top students leaderboard (wow endpoint)
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /anthropic/conversations:
+    get:
+      operationId: listAnthropicConversations
+      tags: [anthropic]
+      summary: List all chat conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicConversation"
+    post:
+      operationId: createAnthropicConversation
+      tags: [anthropic]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnthropicConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversation"
+  /anthropic/conversations/{id}:
+    get:
+      operationId: getAnthropicConversation
+      tags: [anthropic]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+    delete:
+      operationId: deleteAnthropicConversation
+      tags: [anthropic]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+  /anthropic/conversations/{id}/messages:
+    get:
+      operationId: listAnthropicMessages
+      tags: [anthropic]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicMessage"
+    post:
+      operationId: sendAnthropicMessage
+      tags: [anthropic]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendAnthropicMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +376,350 @@ components:
       required:
         - status
 
+    Subject:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameBn:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        description:
+          type: string
+        chapterCount:
+          type: integer
+        questionCount:
+          type: integer
+      required: [id, name, nameBn, icon, color, description, chapterCount, questionCount]
+
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: integer
+        subjectId:
+          type: integer
+        name:
+          type: string
+        nameBn:
+          type: string
+        orderIndex:
+          type: integer
+        questionCount:
+          type: integer
+      required: [id, subjectId, name, nameBn, orderIndex, questionCount]
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        chapterId:
+          type: integer
+        questionText:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        explanation:
+          type: string
+        difficulty:
+          type: string
+      required: [id, chapterId, questionText, options, correctIndex, explanation, difficulty]
+
+    SubmitAnswerBody:
+      type: object
+      properties:
+        questionId:
+          type: integer
+        selectedIndex:
+          type: integer
+      required: [questionId, selectedIndex]
+
+    AnswerResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        correctIndex:
+          type: integer
+        explanation:
+          type: string
+        pointsEarned:
+          type: integer
+      required: [correct, correctIndex, explanation, pointsEarned]
+
+    ModelTest:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleBn:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        questionCount:
+          type: integer
+        difficulty:
+          type: string
+        subjectName:
+          type: string
+      required: [id, title, titleBn, description, durationMinutes, questionCount, difficulty, subjectName]
+
+    ModelTestWithQuestions:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleBn:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        difficulty:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+      required: [id, title, titleBn, description, durationMinutes, difficulty, questions]
+
+    SubmitTestBody:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: integer
+              selectedIndex:
+                type: integer
+            required: [questionId, selectedIndex]
+        timeTakenSeconds:
+          type: integer
+      required: [answers, timeTakenSeconds]
+
+    TestResult:
+      type: object
+      properties:
+        attemptId:
+          type: integer
+        testId:
+          type: integer
+        score:
+          type: integer
+        totalQuestions:
+          type: integer
+        correctCount:
+          type: integer
+        wrongCount:
+          type: integer
+        accuracy:
+          type: number
+        timeTakenSeconds:
+          type: integer
+        rank:
+          type: integer
+      required: [attemptId, testId, score, totalQuestions, correctCount, wrongCount, accuracy, timeTakenSeconds, rank]
+
+    TestAttempt:
+      type: object
+      properties:
+        id:
+          type: integer
+        testId:
+          type: integer
+        testTitle:
+          type: string
+        score:
+          type: integer
+        totalQuestions:
+          type: integer
+        accuracy:
+          type: number
+        completedAt:
+          type: string
+          format: date-time
+      required: [id, testId, testTitle, score, totalQuestions, accuracy, completedAt]
+
+    ProgressSummary:
+      type: object
+      properties:
+        totalPoints:
+          type: integer
+        totalAnswered:
+          type: integer
+        totalCorrect:
+          type: integer
+        accuracy:
+          type: number
+        testsCompleted:
+          type: integer
+        currentStreak:
+          type: integer
+        rank:
+          type: integer
+        level:
+          type: string
+      required: [totalPoints, totalAnswered, totalCorrect, accuracy, testsCompleted, currentStreak, rank, level]
+
+    SubjectProgress:
+      type: object
+      properties:
+        subjectId:
+          type: integer
+        subjectName:
+          type: string
+        subjectNameBn:
+          type: string
+        color:
+          type: string
+        answered:
+          type: integer
+        correct:
+          type: integer
+        accuracy:
+          type: number
+        totalQuestions:
+          type: integer
+      required: [subjectId, subjectName, subjectNameBn, color, answered, correct, accuracy, totalQuestions]
+
+    StreakInfo:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        lastActiveDate:
+          type: string
+        weeklyActivity:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              count:
+                type: integer
+            required: [day, count]
+      required: [currentStreak, longestStreak, lastActiveDate, weeklyActivity]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        points:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, title, detail, points, createdAt]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        name:
+          type: string
+        avatarColor:
+          type: string
+        points:
+          type: integer
+        accuracy:
+          type: number
+        testsCompleted:
+          type: integer
+        isCurrentUser:
+          type: boolean
+      required: [rank, name, avatarColor, points, accuracy, testsCompleted, isCurrentUser]
+
+    AnthropicConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, createdAt]
+
+    AnthropicMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, conversationId, role, content, createdAt]
+
+    CreateAnthropicConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [title]
+
+    SendAnthropicMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    AnthropicConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnthropicMessage"
+      required: [id, title, createdAt, messages]
+
+    AnthropicError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
