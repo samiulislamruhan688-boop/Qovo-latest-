@@ -37,6 +37,37 @@ export interface Question {
   correctIndex: number;
   explanation: string;
   difficulty: string;
+  source?: string | null;
+  year?: number | null;
+}
+
+export interface ImportQuestionsBody {
+  code: string;
+}
+
+export type ImportQuestionsResponseErrorsItem = {
+  line: number;
+  message: string;
+};
+
+export interface ImportQuestionsResponse {
+  added: number;
+  skipped: number;
+  errors: ImportQuestionsResponseErrorsItem[];
+  createdSubjects: string[];
+  createdChapters: string[];
+}
+
+export type QuestionStatsBySourceItem = {
+  source: string;
+  count: number;
+};
+
+export interface QuestionStats {
+  totalQuestions: number;
+  totalSubjects: number;
+  totalChapters: number;
+  bySource: QuestionStatsBySourceItem[];
 }
 
 export interface SubmitAnswerBody {

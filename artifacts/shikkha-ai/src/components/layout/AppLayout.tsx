@@ -7,7 +7,8 @@ import {
   Trophy, 
   TrendingUp, 
   FileText,
-  Flame
+  Flame,
+  PlusSquare
 } from "lucide-react";
 import { useGetStreak, getGetStreakQueryKey } from "@workspace/api-client-react";
 
@@ -21,6 +22,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/progress", label: "প্রগতি", icon: TrendingUp },
     { href: "/leaderboard", label: "লিডারবোর্ড", icon: Trophy },
     { href: "/chat", label: "এআই টিউটর", icon: MessageSquare },
+    { href: "/import", label: "প্রশ্ন যোগ", icon: PlusSquare },
   ];
 
   return (

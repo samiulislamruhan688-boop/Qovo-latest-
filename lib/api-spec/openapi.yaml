@@ -92,6 +92,38 @@ paths:
                 items:
                   $ref: "#/components/schemas/Question"
 
+  /questions/import:
+    post:
+      operationId: importQuestions
+      tags: [questions]
+      summary: Bulk import questions from a code block
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportQuestionsBody"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportQuestionsResponse"
+
+  /questions/stats:
+    get:
+      operationId: getQuestionStats
+      tags: [questions]
+      summary: Get total question/subject/chapter counts and breakdown by source
+      responses:
+        "200":
+          description: Question stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionStats"
+
   /practice/submit:
     post:
       operationId: submitPracticeAnswer
@@ -433,7 +465,68 @@ components:
           type: string
         difficulty:
           type: string
+        source:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
       required: [id, chapterId, questionText, options, correctIndex, explanation, difficulty]
+
+    ImportQuestionsBody:
+      type: object
+      properties:
+        code:
+          type: string
+      required: [code]
+
+    ImportQuestionsResponse:
+      type: object
+      properties:
+        added:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+              message:
+                type: string
+            required: [line, message]
+        createdSubjects:
+          type: array
+          items:
+            type: string
+        createdChapters:
+          type: array
+          items:
+            type: string
+      required: [added, skipped, errors, createdSubjects, createdChapters]
+
+    QuestionStats:
+      type: object
+      properties:
+        totalQuestions:
+          type: integer
+        totalSubjects:
+          type: integer
+        totalChapters:
+          type: integer
+        bySource:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              count:
+                type: integer
+            required: [source, count]
+      required: [totalQuestions, totalSubjects, totalChapters, bySource]
 
     SubmitAnswerBody:
       type: object

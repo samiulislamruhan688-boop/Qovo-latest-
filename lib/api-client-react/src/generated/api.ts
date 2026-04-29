@@ -26,11 +26,14 @@ import type {
   Chapter,
   CreateAnthropicConversationBody,
   HealthStatus,
+  ImportQuestionsBody,
+  ImportQuestionsResponse,
   LeaderboardEntry,
   ModelTest,
   ModelTestWithQuestions,
   ProgressSummary,
   Question,
+  QuestionStats,
   SendAnthropicMessageBody,
   StreakInfo,
   Subject,
@@ -368,6 +371,167 @@ export function useListQuestionsByChapter<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListQuestionsByChapterQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Bulk import questions from a code block
+ */
+export const getImportQuestionsUrl = () => {
+  return `/api/questions/import`;
+};
+
+export const importQuestions = async (
+  importQuestionsBody: ImportQuestionsBody,
+  options?: RequestInit,
+): Promise<ImportQuestionsResponse> => {
+  return customFetch<ImportQuestionsResponse>(getImportQuestionsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importQuestionsBody),
+  });
+};
+
+export const getImportQuestionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importQuestions>>,
+    TError,
+    { data: BodyType<ImportQuestionsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importQuestions>>,
+  TError,
+  { data: BodyType<ImportQuestionsBody> },
+  TContext
+> => {
+  const mutationKey = ["importQuestions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importQuestions>>,
+    { data: BodyType<ImportQuestionsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importQuestions(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportQuestionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importQuestions>>
+>;
+export type ImportQuestionsMutationBody = BodyType<ImportQuestionsBody>;
+export type ImportQuestionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk import questions from a code block
+ */
+export const useImportQuestions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importQuestions>>,
+    TError,
+    { data: BodyType<ImportQuestionsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importQuestions>>,
+  TError,
+  { data: BodyType<ImportQuestionsBody> },
+  TContext
+> => {
+  return useMutation(getImportQuestionsMutationOptions(options));
+};
+
+/**
+ * @summary Get total question/subject/chapter counts and breakdown by source
+ */
+export const getGetQuestionStatsUrl = () => {
+  return `/api/questions/stats`;
+};
+
+export const getQuestionStats = async (
+  options?: RequestInit,
+): Promise<QuestionStats> => {
+  return customFetch<QuestionStats>(getGetQuestionStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetQuestionStatsQueryKey = () => {
+  return [`/api/questions/stats`] as const;
+};
+
+export const getGetQuestionStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getQuestionStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestionStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetQuestionStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getQuestionStats>>
+  > = ({ signal }) => getQuestionStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestionStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetQuestionStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getQuestionStats>>
+>;
+export type GetQuestionStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get total question/subject/chapter counts and breakdown by source
+ */
+
+export function useGetQuestionStats<
+  TData = Awaited<ReturnType<typeof getQuestionStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestionStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetQuestionStatsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

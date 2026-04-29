@@ -17,6 +17,7 @@ import Progress from "@/pages/progress";
 import Leaderboard from "@/pages/leaderboard";
 import ChatList from "@/pages/chat/index";
 import Chat from "@/pages/chat/[id]";
+import ImportPage from "@/pages/import";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/chat" component={ChatList} />
       <Route path="/chat/:conversationId" component={Chat} />
+      <Route path="/import" component={ImportPage} />
       <Route component={NotFound} />
     </Switch>
   );

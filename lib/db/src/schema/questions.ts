@@ -11,6 +11,8 @@ export const questions = pgTable("questions", {
   correctIndex: integer("correct_index").notNull(),
   explanation: text("explanation").notNull(),
   difficulty: text("difficulty").notNull().default("medium"),
+  source: text("source"),
+  year: integer("year"),
 });
 
 export type Question = typeof questions.$inferSelect;

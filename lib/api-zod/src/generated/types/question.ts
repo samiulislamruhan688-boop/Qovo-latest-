@@ -14,4 +14,6 @@ export interface Question {
   correctIndex: number;
   explanation: string;
   difficulty: string;
+  source?: string | null;
+  year?: number | null;
 }

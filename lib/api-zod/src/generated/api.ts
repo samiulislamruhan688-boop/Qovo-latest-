@@ -63,10 +63,47 @@ export const ListQuestionsByChapterResponseItem = zod.object({
   correctIndex: zod.number(),
   explanation: zod.string(),
   difficulty: zod.string(),
+  source: zod.string().nullish(),
+  year: zod.number().nullish(),
 });
 export const ListQuestionsByChapterResponse = zod.array(
   ListQuestionsByChapterResponseItem,
 );
+
+/**
+ * @summary Bulk import questions from a code block
+ */
+export const ImportQuestionsBody = zod.object({
+  code: zod.string(),
+});
+
+export const ImportQuestionsResponse = zod.object({
+  added: zod.number(),
+  skipped: zod.number(),
+  errors: zod.array(
+    zod.object({
+      line: zod.number(),
+      message: zod.string(),
+    }),
+  ),
+  createdSubjects: zod.array(zod.string()),
+  createdChapters: zod.array(zod.string()),
+});
+
+/**
+ * @summary Get total question/subject/chapter counts and breakdown by source
+ */
+export const GetQuestionStatsResponse = zod.object({
+  totalQuestions: zod.number(),
+  totalSubjects: zod.number(),
+  totalChapters: zod.number(),
+  bySource: zod.array(
+    zod.object({
+      source: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+});
 
 /**
  * @summary Submit a practice answer
@@ -121,6 +158,8 @@ export const GetTestResponse = zod.object({
       correctIndex: zod.number(),
       explanation: zod.string(),
       difficulty: zod.string(),
+      source: zod.string().nullish(),
+      year: zod.number().nullish(),
     }),
   ),
 });
