@@ -18,6 +18,7 @@ export interface Subject {
   description: string;
   chapterCount: number;
   questionCount: number;
+  category?: string | null;
 }
 
 export interface Chapter {
@@ -39,6 +40,7 @@ export interface Question {
   difficulty: string;
   source?: string | null;
   year?: number | null;
+  hint?: string | null;
 }
 
 export interface ImportQuestionsBody {

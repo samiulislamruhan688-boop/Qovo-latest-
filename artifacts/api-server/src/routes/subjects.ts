@@ -18,6 +18,7 @@ router.get("/subjects", async (_req, res): Promise<void> => {
       icon: subjects.icon,
       color: subjects.color,
       description: subjects.description,
+      category: subjects.category,
       chapterCount: sql<number>`COALESCE(COUNT(DISTINCT ${chapters.id}), 0)::int`,
       questionCount: sql<number>`COALESCE(COUNT(${questions.id}), 0)::int`,
     })

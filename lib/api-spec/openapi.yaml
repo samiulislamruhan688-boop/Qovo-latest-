@@ -427,6 +427,9 @@ components:
           type: integer
         questionCount:
           type: integer
+        category:
+          type: string
+          nullable: true
       required: [id, name, nameBn, icon, color, description, chapterCount, questionCount]
 
     Chapter:
@@ -470,6 +473,9 @@ components:
           nullable: true
         year:
           type: integer
+          nullable: true
+        hint:
+          type: string
           nullable: true
       required: [id, chapterId, questionText, options, correctIndex, explanation, difficulty]
 

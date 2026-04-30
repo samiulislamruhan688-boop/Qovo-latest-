@@ -8,6 +8,7 @@ export interface ParsedQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+  hint: string | null;
   startLine: number;
 }
 
@@ -79,7 +80,8 @@ function parseBlock(block: Block, defaults: { subject?: string; chapter?: string
   let answerToken: string | null = null;
   let answerLine = -1;
   let explanation = "";
-  let mode: "none" | "question" | "explain" = "none";
+  let hint = "";
+  let mode: "none" | "question" | "explain" | "hint" = "none";
 
   const directiveRe = /^@(\w+)\s*[:：]\s*(.*)$/;
   const optionRe = /^([A-Ea-eকখগঘঙ১২৩৪৫1-5])\s*[).।]\s*(.+)$/;
@@ -137,13 +139,20 @@ function parseBlock(block: Block, defaults: { subject?: string; chapter?: string
         mode = "explain";
         continue;
       }
+      if (key === "hint" || key === "সংকেত" || key === "ইঙ্গিত") {
+        hint = val;
+        mode = "hint";
+        continue;
+      }
     }
 
-    // Continuation line for question or explanation
+    // Continuation line for question, explanation, or hint
     if (mode === "question") {
       questionText += (questionText.endsWith(" ") || questionText === "" ? "" : " ") + trimmed;
     } else if (mode === "explain") {
       explanation += (explanation === "" ? "" : "\n") + trimmed;
+    } else if (mode === "hint") {
+      hint += (hint === "" ? "" : " ") + trimmed;
     } else if (questionText === "" && options.length === 0 && answerToken === null) {
       // First non-directive line — treat as the question text
       questionText = trimmed;
@@ -207,6 +216,7 @@ function parseBlock(block: Block, defaults: { subject?: string; chapter?: string
     options,
     correctIndex,
     explanation: explanation.trim() || "ব্যাখ্যা প্রদান করা হয়নি।",
+    hint: hint.trim() || null,
     startLine: block.startLine,
   };
 

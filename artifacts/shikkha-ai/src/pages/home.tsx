@@ -18,20 +18,39 @@ export default function Home() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-secondary/10 border border-border/50 p-8 md:p-12">
+      <section className="relative overflow-hidden rounded-3xl qovo-gradient-soft border border-border/50 p-8 md:p-12">
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full qovo-gradient opacity-20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-10 w-72 h-72 rounded-full bg-secondary opacity-10 blur-3xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl">
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-            স্বাগতম, শিক্ষার্থী!
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card/80 border border-border text-xs font-semibold text-foreground mb-4 shadow-sm backdrop-blur">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            SSC ২০২৬ — সুপারফাস্ট প্রস্তুতি
+          </div>
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-4 leading-tight">
+            <span className="qovo-gradient-text">Qovo</span>
+            <span className="text-foreground"> দিয়ে আজই শুরু করো</span>
           </h1>
           <p className="text-lg text-muted-foreground mb-8">
-            আজকের লক্ষ্য নির্ধারণ করুন এবং আপনার প্রস্তুতি চালিয়ে যান। সম্পূর্ণ বিনামূল্যে।
+            এলোমেলো MCQ অনুশীলন, স্মার্ট হিন্ট, প্রতিটি বিষয়ের মডেল টেস্ট ও বন্ধুসুলভ AI টিউটর — সম্পূর্ণ বিনামূল্যে।
           </p>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/subjects" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-              পড়া শুরু করুন <ArrowRight className="ml-2 w-5 h-5" />
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/subjects"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full qovo-gradient text-white font-semibold qovo-glow hover:scale-105 transition-transform"
+            >
+              পড়া শুরু করো <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
-            <Link href="/chat" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-card text-foreground font-semibold border border-border hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm">
-              এআই টিউটরকে প্রশ্ন করুন
+            <Link
+              href="/tests"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-card text-foreground font-semibold border border-border hover:border-primary/50 transition-colors shadow-sm"
+            >
+              মডেল টেস্ট দাও
+            </Link>
+            <Link
+              href="/chat"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-secondary/10 text-secondary font-semibold border border-secondary/30 hover:bg-secondary/20 transition-colors"
+            >
+              টিউটরকে প্রশ্ন করো
             </Link>
           </div>
         </div>

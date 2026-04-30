@@ -13,6 +13,7 @@ export const questions = pgTable("questions", {
   difficulty: text("difficulty").notNull().default("medium"),
   source: text("source"),
   year: integer("year"),
+  hint: text("hint"),
 });
 
 export type Question = typeof questions.$inferSelect;

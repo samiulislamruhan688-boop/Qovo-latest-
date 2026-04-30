@@ -15,4 +15,5 @@ export interface Subject {
   description: string;
   chapterCount: number;
   questionCount: number;
+  category?: string | null;
 }

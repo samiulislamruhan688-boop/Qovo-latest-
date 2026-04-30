@@ -26,6 +26,7 @@ export const ListSubjectsResponseItem = zod.object({
   description: zod.string(),
   chapterCount: zod.number(),
   questionCount: zod.number(),
+  category: zod.string().nullish(),
 });
 export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem);
 
@@ -65,6 +66,7 @@ export const ListQuestionsByChapterResponseItem = zod.object({
   difficulty: zod.string(),
   source: zod.string().nullish(),
   year: zod.number().nullish(),
+  hint: zod.string().nullish(),
 });
 export const ListQuestionsByChapterResponse = zod.array(
   ListQuestionsByChapterResponseItem,
@@ -160,6 +162,7 @@ export const GetTestResponse = zod.object({
       difficulty: zod.string(),
       source: zod.string().nullish(),
       year: zod.number().nullish(),
+      hint: zod.string().nullish(),
     }),
   ),
 });

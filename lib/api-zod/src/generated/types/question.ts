@@ -16,4 +16,5 @@ export interface Question {
   difficulty: string;
   source?: string | null;
   year?: number | null;
+  hint?: string | null;
 }

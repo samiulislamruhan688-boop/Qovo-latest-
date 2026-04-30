@@ -1,49 +1,112 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useListQuestionsByChapter, useSubmitPracticeAnswer } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, ArrowRight, ChevronLeft, Trophy, Lightbulb } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  ChevronLeft,
+  Trophy,
+  Lightbulb,
+  Sparkles,
+  Shuffle,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+type QuestionLike = {
+  id: number;
+  questionText: string;
+  options: string[];
+  correctIndex: number;
+  difficulty: string;
+  hint?: string | null;
+  explanation: string;
+};
+
+interface ShuffledQuestion {
+  base: QuestionLike;
+  /** displayedOptions[displayIdx] = base.options[originalIdx] */
+  displayOrder: number[];
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function buildShuffled(questions: QuestionLike[]): ShuffledQuestion[] {
+  return shuffleArray(questions).map((q) => ({
+    base: q,
+    displayOrder: shuffleArray(q.options.map((_, i) => i)),
+  }));
+}
 
 export default function Practice() {
   const [, params] = useRoute("/practice/:chapterId");
   const chapterId = Number(params?.chapterId);
 
   const { data: questions, isLoading } = useListQuestionsByChapter(chapterId, {
-    query: { enabled: !!chapterId, queryKey: ["/api/chapters", chapterId, "questions"] }
+    query: { enabled: !!chapterId, queryKey: ["/api/chapters", chapterId, "questions"] },
   });
 
   const submitAnswer = useSubmitPracticeAnswer();
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [answerResult, setAnswerResult] = useState<{correct: boolean, correctIndex: number, explanation: string, pointsEarned: number} | null>(null);
-  
-  const currentQuestion = questions?.[currentIndex];
-  const isLastQuestion = questions && currentIndex === questions.length - 1;
-  const isCompleted = questions && currentIndex >= questions.length;
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const shuffled = useMemo<ShuffledQuestion[]>(() => {
+    if (!questions || questions.length === 0) return [];
+    return buildShuffled(questions as QuestionLike[]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, shuffleSeed]);
 
-  const handleSelectOption = (index: number) => {
-    if (selectedOption !== null || !currentQuestion) return; // Prevent multiple clicks
-    
-    setSelectedOption(index);
-    submitAnswer.mutate({
-      data: { questionId: currentQuestion.id, selectedIndex: index }
-    }, {
-      onSuccess: (result) => {
-        setAnswerResult(result);
-      }
-    });
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedDisplayIdx, setSelectedDisplayIdx] = useState<number | null>(null);
+  const [answerResult, setAnswerResult] = useState<{
+    correct: boolean;
+    correctIndex: number;
+    explanation: string;
+    pointsEarned: number;
+  } | null>(null);
+  const [hintRevealed, setHintRevealed] = useState(false);
+
+  useEffect(() => {
+    setHintRevealed(false);
+  }, [currentIndex]);
+
+  const current = shuffled[currentIndex];
+  const isLastQuestion = shuffled.length > 0 && currentIndex === shuffled.length - 1;
+  const isCompleted = shuffled.length > 0 && currentIndex >= shuffled.length;
+
+  const handleSelectOption = (displayIdx: number) => {
+    if (selectedDisplayIdx !== null || !current) return;
+    const originalIdx = current.displayOrder[displayIdx];
+    setSelectedDisplayIdx(displayIdx);
+    submitAnswer.mutate(
+      { data: { questionId: current.base.id, selectedIndex: originalIdx } },
+      { onSuccess: (result) => setAnswerResult(result) },
+    );
   };
 
   const handleNext = () => {
-    setSelectedOption(null);
+    setSelectedDisplayIdx(null);
     setAnswerResult(null);
-    setCurrentIndex(prev => prev + 1);
+    setCurrentIndex((p) => p + 1);
+  };
+
+  const restart = () => {
+    setShuffleSeed((s) => s + 1);
+    setCurrentIndex(0);
+    setSelectedDisplayIdx(null);
+    setAnswerResult(null);
+    setHintRevealed(false);
   };
 
   if (isLoading) {
@@ -52,7 +115,9 @@ export default function Practice() {
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="space-y-3">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       </div>
     );
@@ -69,98 +134,172 @@ export default function Practice() {
     );
   }
 
-  if (isCompleted) {
+  if (isCompleted || !current) {
     return (
       <div className="max-w-md mx-auto text-center py-20 space-y-6">
-        <motion.div 
-          initial={{ scale: 0 }} 
-          animate={{ scale: 1 }} 
-          className="w-24 h-24 mx-auto bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center"
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="w-24 h-24 mx-auto qovo-gradient text-white rounded-full flex items-center justify-center qovo-glow"
         >
           <Trophy className="w-12 h-12" />
         </motion.div>
         <h2 className="text-3xl font-bold">অনুশীলন সম্পন্ন!</h2>
-        <p className="text-muted-foreground">আপনি এই অধ্যায়ের সব প্রশ্ন শেষ করেছেন।</p>
-        <div className="flex gap-4 justify-center pt-4">
+        <p className="text-muted-foreground">এই অধ্যায়ের সব প্রশ্ন শেষ। আবার এলোমেলো করে চেষ্টা করো!</p>
+        <div className="flex gap-3 justify-center pt-4">
           <Link href="/subjects">
             <Button variant="outline">অন্য বিষয়</Button>
           </Link>
-          <Button onClick={() => { setCurrentIndex(0); setAnswerResult(null); setSelectedOption(null); }}>
-            আবার চেষ্টা করুন
+          <Button onClick={restart} className="qovo-gradient text-white">
+            <Shuffle className="w-4 h-4 mr-2" />
+            আবার এলোমেলো
           </Button>
         </div>
       </div>
     );
   }
 
+  const hintText =
+    current.base.hint && current.base.hint.trim().length > 0
+      ? current.base.hint
+      : current.base.explanation.length > 60
+        ? current.base.explanation.slice(0, 60) + "…"
+        : current.base.explanation;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between mb-4">
         <Link href={`/subjects`}>
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             <ChevronLeft className="w-4 h-4 mr-1" /> ফিরে যান
           </Button>
         </Link>
-        <div className="text-sm font-medium text-muted-foreground">
-          প্রশ্ন {currentIndex + 1} / {questions.length}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={restart}
+            className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 text-muted-foreground flex items-center gap-1.5 transition-colors"
+            title="প্রশ্ন আবার এলোমেলো করুন"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            শাফল
+          </button>
+          <div className="text-sm font-medium text-muted-foreground tabular-nums">
+            {currentIndex + 1} / {shuffled.length}
+          </div>
         </div>
       </div>
 
-      <Progress value={((currentIndex) / questions.length) * 100} className="h-2" />
+      <Progress value={(currentIndex / shuffled.length) * 100} className="h-1.5" />
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentIndex}
+          key={currentIndex + "-" + shuffleSeed}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-6"
+          transition={{ duration: 0.18 }}
+          className="space-y-5"
         >
           <Card className="border-border shadow-md">
             <CardContent className="p-6 md:p-8">
-              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground mb-4">
-                {currentQuestion?.difficulty === 'easy' ? 'সহজ' : currentQuestion?.difficulty === 'medium' ? 'মাঝারি' : 'কঠিন'}
+              <div className="flex items-center justify-between mb-4">
+                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                  {current.base.difficulty === "easy"
+                    ? "সহজ"
+                    : current.base.difficulty === "medium"
+                      ? "মাঝারি"
+                      : "কঠিন"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHintRevealed(true)}
+                  disabled={hintRevealed || selectedDisplayIdx !== null}
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all",
+                    hintRevealed
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                      : "bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:hover:bg-amber-950/60 dark:text-amber-300 hover:scale-105",
+                    selectedDisplayIdx !== null && "opacity-40 cursor-not-allowed",
+                  )}
+                  aria-label="সংকেত দেখুন"
+                >
+                  <Lightbulb className={cn("w-3.5 h-3.5", hintRevealed && "fill-current")} />
+                  {hintRevealed ? "সংকেত দেখানো হয়েছে" : "সংকেত (Hint)"}
+                </button>
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
-                {currentQuestion?.questionText}
+                {current.base.questionText}
               </h2>
+              <AnimatePresence>
+                {hintRevealed && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-100">
+                      <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-300" />
+                      <p className="text-sm leading-relaxed">{hintText}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
 
           <div className="grid gap-3">
-            {currentQuestion?.options.map((option, index) => {
-              const isSelected = selectedOption === index;
-              const isSubmitted = selectedOption !== null;
-              const isCorrect = answerResult?.correctIndex === index;
+            {current.displayOrder.map((originalIdx, displayIdx) => {
+              const option = current.base.options[originalIdx];
+              const isSelected = selectedDisplayIdx === displayIdx;
+              const isSubmitted = selectedDisplayIdx !== null;
+              const isCorrect = answerResult?.correctIndex === originalIdx;
               const isWrongSelected = isSelected && !isCorrect;
 
               return (
                 <button
-                  key={index}
-                  onClick={() => handleSelectOption(index)}
+                  key={displayIdx}
+                  onClick={() => handleSelectOption(displayIdx)}
                   disabled={isSubmitted || submitAnswer.isPending}
                   className={cn(
                     "relative flex items-center p-4 rounded-xl border-2 text-left transition-all",
-                    !isSubmitted && "border-border hover:border-primary/50 hover:bg-muted/50 bg-card",
-                    isSubmitted && isCorrect && "border-green-500 bg-green-50 dark:bg-green-950/20 text-green-900 dark:text-green-100",
-                    isSubmitted && isWrongSelected && "border-destructive bg-destructive/10 text-destructive",
-                    isSubmitted && !isCorrect && !isWrongSelected && "border-border bg-muted/50 opacity-50 cursor-not-allowed"
+                    !isSubmitted &&
+                      "border-border hover:border-primary/50 hover:bg-muted/50 bg-card hover:scale-[1.01] active:scale-[0.99]",
+                    isSubmitted &&
+                      isCorrect &&
+                      "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100",
+                    isSubmitted &&
+                      isWrongSelected &&
+                      "border-destructive bg-destructive/10 text-destructive",
+                    isSubmitted &&
+                      !isCorrect &&
+                      !isWrongSelected &&
+                      "border-border bg-muted/40 opacity-50 cursor-not-allowed",
                   )}
                 >
-                  <div className={cn(
-                    "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-semibold text-sm",
-                    !isSubmitted && "border-border text-muted-foreground",
-                    isSubmitted && isCorrect && "border-green-500 bg-green-500 text-white",
-                    isSubmitted && isWrongSelected && "border-destructive bg-destructive text-white",
-                    isSubmitted && !isCorrect && !isWrongSelected && "border-border text-muted-foreground"
-                  )}>
-                    {String.fromCharCode(65 + index)}
+                  <div
+                    className={cn(
+                      "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-semibold text-sm",
+                      !isSubmitted && "border-border text-muted-foreground",
+                      isSubmitted && isCorrect && "border-emerald-500 bg-emerald-500 text-white",
+                      isSubmitted && isWrongSelected && "border-destructive bg-destructive text-white",
+                      isSubmitted &&
+                        !isCorrect &&
+                        !isWrongSelected &&
+                        "border-border text-muted-foreground",
+                    )}
+                  >
+                    {String.fromCharCode(65 + displayIdx)}
                   </div>
                   <span className="flex-1 font-medium">{option}</span>
-                  
-                  {isSubmitted && isCorrect && <CheckCircle2 className="w-6 h-6 text-green-500 absolute right-4" />}
-                  {isSubmitted && isWrongSelected && <XCircle className="w-6 h-6 text-destructive absolute right-4" />}
+
+                  {isSubmitted && isCorrect && (
+                    <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute right-4" />
+                  )}
+                  {isSubmitted && isWrongSelected && (
+                    <XCircle className="w-6 h-6 text-destructive absolute right-4" />
+                  )}
                 </button>
               );
             })}
@@ -170,28 +309,36 @@ export default function Practice() {
             {answerResult && (
               <motion.div
                 initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 24 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 16 }}
                 className="overflow-hidden"
               >
-                <Card className={cn(
-                  "border-l-4",
-                  answerResult.correct ? "border-l-green-500" : "border-l-orange-500"
-                )}>
+                <Card
+                  className={cn(
+                    "border-l-4",
+                    answerResult.correct ? "border-l-emerald-500" : "border-l-orange-500",
+                  )}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className={cn(
-                        "p-2 rounded-full",
-                        answerResult.correct ? "bg-green-100 text-green-600 dark:bg-green-900/30" : "bg-orange-100 text-orange-600 dark:bg-orange-900/30"
-                      )}>
+                      <div
+                        className={cn(
+                          "p-2 rounded-full",
+                          answerResult.correct
+                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40"
+                            : "bg-orange-100 text-orange-600 dark:bg-orange-900/40",
+                        )}
+                      >
                         <Lightbulb className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-lg mb-2">
-                          {answerResult.correct ? "সঠিক উত্তর!" : "সঠিক উত্তরটি হলো:"}
+                          {answerResult.correct
+                            ? `সঠিক উত্তর! +${answerResult.pointsEarned} পয়েন্ট`
+                            : "সঠিক উত্তরটি হলো:"}
                         </h3>
-                        {!answerResult.correct && currentQuestion && (
+                        {!answerResult.correct && (
                           <p className="font-medium text-foreground mb-3 p-3 bg-muted rounded-lg">
-                            {currentQuestion.options[answerResult.correctIndex]}
+                            {current.base.options[answerResult.correctIndex]}
                           </p>
                         )}
                         <p className="text-muted-foreground leading-relaxed">
@@ -199,10 +346,15 @@ export default function Practice() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="mt-6 flex justify-end">
-                      <Button onClick={handleNext} size="lg" className="rounded-full px-8">
-                        {isLastQuestion ? "শেষ করুন" : "পরবর্তী প্রশ্ন"} <ArrowRight className="w-5 h-5 ml-2" />
+                      <Button
+                        onClick={handleNext}
+                        size="lg"
+                        className="rounded-full px-8 qovo-gradient text-white border-0"
+                      >
+                        {isLastQuestion ? "শেষ করুন" : "পরবর্তী প্রশ্ন"}
+                        <ArrowRight className="w-5 h-5 ml-2" />
                       </Button>
                     </div>
                   </CardContent>

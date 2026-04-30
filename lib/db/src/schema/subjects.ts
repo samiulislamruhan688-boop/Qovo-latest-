@@ -7,6 +7,7 @@ export const subjects = pgTable("subjects", {
   icon: text("icon").notNull(),
   color: text("color").notNull(),
   description: text("description").notNull(),
+  category: text("category"),
 });
 
 export type Subject = typeof subjects.$inferSelect;

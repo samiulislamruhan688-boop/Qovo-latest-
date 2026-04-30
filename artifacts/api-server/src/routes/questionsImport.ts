@@ -146,6 +146,7 @@ router.post("/questions/import", async (req, res): Promise<void> => {
         difficulty: q.difficulty,
         source: q.source,
         year: q.year,
+        hint: q.hint,
       } satisfies Omit<ParsedQuestion, "subjectName" | "chapterName" | "startLine"> & { chapterId: number });
       added++;
     } catch (err) {
