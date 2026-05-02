@@ -14,9 +14,13 @@ import {
   Lightbulb,
   Sparkles,
   Shuffle,
+  BookmarkCheck,
+  RotateCcw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { playHush, playCorrect, playWrong } from "@/hooks/useSound";
+import { useWrongAnswers } from "@/hooks/useWrongAnswers";
 
 type QuestionLike = {
   id: number;
@@ -30,7 +34,6 @@ type QuestionLike = {
 
 interface ShuffledQuestion {
   base: QuestionLike;
-  /** displayedOptions[displayIdx] = base.options[originalIdx] */
   displayOrder: number[];
 }
 
@@ -59,6 +62,7 @@ export default function Practice() {
   });
 
   const submitAnswer = useSubmitPracticeAnswer();
+  const { addWrong, wrongAnswers } = useWrongAnswers();
 
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const shuffled = useMemo<ShuffledQuestion[]>(() => {
@@ -76,6 +80,8 @@ export default function Practice() {
     pointsEarned: number;
   } | null>(null);
   const [hintRevealed, setHintRevealed] = useState(false);
+  const [sessionWrong, setSessionWrong] = useState(0);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
 
   useEffect(() => {
     setHintRevealed(false);
@@ -87,11 +93,32 @@ export default function Practice() {
 
   const handleSelectOption = (displayIdx: number) => {
     if (selectedDisplayIdx !== null || !current) return;
+    playHush();
     const originalIdx = current.displayOrder[displayIdx];
     setSelectedDisplayIdx(displayIdx);
     submitAnswer.mutate(
       { data: { questionId: current.base.id, selectedIndex: originalIdx } },
-      { onSuccess: (result) => setAnswerResult(result) },
+      {
+        onSuccess: (result) => {
+          setAnswerResult(result);
+          if (result.correct) {
+            playCorrect();
+            setSessionCorrect((c) => c + 1);
+          } else {
+            playWrong();
+            setSessionWrong((w) => w + 1);
+            addWrong({
+              questionId: current.base.id,
+              questionText: current.base.questionText,
+              correctOption: current.base.options[result.correctIndex],
+              selectedOption: current.base.options[originalIdx],
+              explanation: result.explanation,
+              chapterId,
+              savedAt: new Date().toISOString(),
+            });
+          }
+        },
+      },
     );
   };
 
@@ -107,6 +134,8 @@ export default function Practice() {
     setSelectedDisplayIdx(null);
     setAnswerResult(null);
     setHintRevealed(false);
+    setSessionCorrect(0);
+    setSessionWrong(0);
   };
 
   if (isLoading) {
@@ -135,27 +164,57 @@ export default function Practice() {
   }
 
   if (isCompleted || !current) {
+    const total = sessionCorrect + sessionWrong;
+    const pct = total > 0 ? Math.round((sessionCorrect / total) * 100) : 0;
     return (
-      <div className="max-w-md mx-auto text-center py-20 space-y-6">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-24 h-24 mx-auto qovo-gradient text-white rounded-full flex items-center justify-center qovo-glow"
-        >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md mx-auto text-center py-12 space-y-6"
+      >
+        <div className="w-24 h-24 mx-auto qovo-gradient text-white rounded-full flex items-center justify-center qovo-glow">
           <Trophy className="w-12 h-12" />
-        </motion.div>
+        </div>
         <h2 className="text-3xl font-bold">অনুশীলন সম্পন্ন!</h2>
-        <p className="text-muted-foreground">এই অধ্যায়ের সব প্রশ্ন শেষ। আবার এলোমেলো করে চেষ্টা করো!</p>
-        <div className="flex gap-3 justify-center pt-4">
+        <div className="grid grid-cols-3 gap-4 py-4">
+          <div className="bg-muted/50 rounded-2xl p-4">
+            <p className="text-3xl font-bold qovo-gradient-text">{pct}%</p>
+            <p className="text-xs text-muted-foreground mt-1">সঠিকতা</p>
+          </div>
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl p-4">
+            <p className="text-3xl font-bold text-emerald-600">{sessionCorrect}</p>
+            <p className="text-xs text-muted-foreground mt-1">সঠিক</p>
+          </div>
+          <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl p-4">
+            <p className="text-3xl font-bold text-destructive">{sessionWrong}</p>
+            <p className="text-xs text-muted-foreground mt-1">ভুল</p>
+          </div>
+        </div>
+        {sessionWrong > 0 && (
+          <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3">
+            <BookmarkCheck className="w-4 h-4 text-amber-600" />
+            <span>{sessionWrong}টি ভুল উত্তর রিভিউ লিস্টে সেভ হয়েছে</span>
+          </div>
+        )}
+        <p className="text-muted-foreground text-sm">আবার এলোমেলো করে চেষ্টা করো!</p>
+        <div className="flex gap-3 justify-center pt-2">
           <Link href="/subjects">
             <Button variant="outline">অন্য বিষয়</Button>
           </Link>
-          <Button onClick={restart} className="qovo-gradient text-white">
+          <Button onClick={restart} className="qovo-gradient text-white border-0">
             <Shuffle className="w-4 h-4 mr-2" />
             আবার এলোমেলো
           </Button>
         </div>
-      </div>
+        {wrongAnswers.length > 0 && (
+          <Link href="/review">
+            <Button variant="ghost" size="sm" className="text-amber-600">
+              <BookmarkCheck className="w-4 h-4 mr-1" />
+              সব ভুল উত্তর দেখুন ({wrongAnswers.length})
+            </Button>
+          </Link>
+        )}
+      </motion.div>
     );
   }
 
@@ -175,6 +234,11 @@ export default function Practice() {
           </Button>
         </Link>
         <div className="flex items-center gap-2">
+          {sessionWrong > 0 && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/30 text-destructive border border-red-200 dark:border-red-900">
+              {sessionWrong} ভুল সেভ
+            </span>
+          )}
           <button
             type="button"
             onClick={restart}
@@ -195,10 +259,10 @@ export default function Practice() {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex + "-" + shuffleSeed}
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.18 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className="space-y-5"
         >
           <Card className="border-border shadow-md">
@@ -258,14 +322,16 @@ export default function Practice() {
               const isWrongSelected = isSelected && !isCorrect;
 
               return (
-                <button
+                <motion.button
                   key={displayIdx}
+                  whileHover={!isSubmitted ? { scale: 1.01 } : {}}
+                  whileTap={!isSubmitted ? { scale: 0.99 } : {}}
                   onClick={() => handleSelectOption(displayIdx)}
                   disabled={isSubmitted || submitAnswer.isPending}
                   className={cn(
-                    "relative flex items-center p-4 rounded-xl border-2 text-left transition-all",
+                    "relative flex items-center p-4 rounded-xl border-2 text-left transition-all duration-200",
                     !isSubmitted &&
-                      "border-border hover:border-primary/50 hover:bg-muted/50 bg-card hover:scale-[1.01] active:scale-[0.99]",
+                      "border-border hover:border-primary/50 hover:bg-muted/50 bg-card cursor-pointer",
                     isSubmitted &&
                       isCorrect &&
                       "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100",
@@ -280,27 +346,23 @@ export default function Practice() {
                 >
                   <div
                     className={cn(
-                      "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-semibold text-sm",
+                      "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-semibold text-sm transition-all",
                       !isSubmitted && "border-border text-muted-foreground",
                       isSubmitted && isCorrect && "border-emerald-500 bg-emerald-500 text-white",
                       isSubmitted && isWrongSelected && "border-destructive bg-destructive text-white",
-                      isSubmitted &&
-                        !isCorrect &&
-                        !isWrongSelected &&
-                        "border-border text-muted-foreground",
+                      isSubmitted && !isCorrect && !isWrongSelected && "border-border text-muted-foreground",
                     )}
                   >
                     {String.fromCharCode(65 + displayIdx)}
                   </div>
                   <span className="flex-1 font-medium">{option}</span>
-
                   {isSubmitted && isCorrect && (
                     <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute right-4" />
                   )}
                   {isSubmitted && isWrongSelected && (
                     <XCircle className="w-6 h-6 text-destructive absolute right-4" />
                   )}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -308,8 +370,9 @@ export default function Practice() {
           <AnimatePresence>
             {answerResult && (
               <motion.div
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22 }}
                 className="overflow-hidden"
               >
                 <Card
@@ -328,22 +391,32 @@ export default function Practice() {
                             : "bg-orange-100 text-orange-600 dark:bg-orange-900/40",
                         )}
                       >
-                        <Lightbulb className="w-6 h-6" />
+                        {answerResult.correct ? (
+                          <CheckCircle2 className="w-6 h-6" />
+                        ) : (
+                          <RotateCcw className="w-6 h-6" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-lg mb-2">
                           {answerResult.correct
-                            ? `সঠিক উত্তর! +${answerResult.pointsEarned} পয়েন্ট`
-                            : "সঠিক উত্তরটি হলো:"}
+                            ? `✅ সঠিক! +${answerResult.pointsEarned} পয়েন্ট`
+                            : "❌ ভুল — সঠিক উত্তরটি হলো:"}
                         </h3>
                         {!answerResult.correct && (
-                          <p className="font-medium text-foreground mb-3 p-3 bg-muted rounded-lg">
-                            {current.base.options[answerResult.correctIndex]}
+                          <p className="font-medium text-foreground mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-lg text-emerald-800 dark:text-emerald-200">
+                            ✓ {current.base.options[answerResult.correctIndex]}
                           </p>
                         )}
-                        <p className="text-muted-foreground leading-relaxed">
-                          {answerResult.explanation}
+                        <p className="text-muted-foreground leading-relaxed text-sm">
+                          📖 {answerResult.explanation}
                         </p>
+                        {!answerResult.correct && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                            <BookmarkCheck className="w-3.5 h-3.5" />
+                            এই প্রশ্নটি রিভিউ লিস্টে সেভ হয়েছে
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -353,7 +426,7 @@ export default function Practice() {
                         size="lg"
                         className="rounded-full px-8 qovo-gradient text-white border-0"
                       >
-                        {isLastQuestion ? "শেষ করুন" : "পরবর্তী প্রশ্ন"}
+                        {isLastQuestion ? "সেশন শেষ করুন" : "পরবর্তী প্রশ্ন"}
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </Button>
                     </div>

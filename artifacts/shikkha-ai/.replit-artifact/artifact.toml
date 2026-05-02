@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Shikkha AI"
+title = "Qovo"
 version = "1.0.0"
 id = "artifacts/shikkha-ai"
 router = "path"

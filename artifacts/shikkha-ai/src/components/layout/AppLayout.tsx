@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Sun,
   Moon,
+  BookmarkCheck,
 } from "lucide-react";
 import { useGetStreak } from "@workspace/api-client-react";
 import { QovoLogo } from "@/components/QovoLogo";
@@ -26,6 +27,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/progress", label: "প্রগতি", icon: TrendingUp },
     { href: "/leaderboard", label: "লিডারবোর্ড", icon: Trophy },
     { href: "/chat", label: "টিউটর", icon: MessageSquare },
+    { href: "/review", label: "রিভিউ", icon: BookmarkCheck },
     { href: "/import", label: "প্রশ্ন যোগ", icon: PlusSquare },
   ];
 

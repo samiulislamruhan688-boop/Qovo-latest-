@@ -18,6 +18,7 @@ import Leaderboard from "@/pages/leaderboard";
 import ChatList from "@/pages/chat/index";
 import Chat from "@/pages/chat/[id]";
 import ImportPage from "@/pages/import";
+import ReviewPage from "@/pages/review";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/chat" component={ChatList} />
       <Route path="/chat/:conversationId" component={Chat} />
       <Route path="/import" component={ImportPage} />
+      <Route path="/review" component={ReviewPage} />
       <Route component={NotFound} />
     </Switch>
   );
