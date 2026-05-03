@@ -19,6 +19,7 @@ import ChatList from "@/pages/chat/index";
 import Chat from "@/pages/chat/[id]";
 import ImportPage from "@/pages/import";
 import ReviewPage from "@/pages/review";
+import SubjectTest from "@/pages/tests/subject/[subjectId]";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/practice/:chapterId" component={Practice} />
       <Route path="/tests" component={Tests} />
       <Route path="/tests/:testId" component={TestTaking} />
+      <Route path="/tests/subject/:subjectId" component={SubjectTest} />
       <Route path="/tests/:testId/result" component={TestResult} />
       <Route path="/progress" component={Progress} />
       <Route path="/leaderboard" component={Leaderboard} />
