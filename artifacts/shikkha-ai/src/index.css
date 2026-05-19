@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -68,57 +68,59 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Qovo — LIGHT MODE: cool blue + neon teal */
+/* ─── Qovo LIGHT MODE — inspired by Q logo (navy bg, cyan→blue→purple) ─── */
 :root {
-  --button-outline: rgba(0,0,0, .08);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(0,0,0,.08);
+  --badge-outline: rgba(0,0,0,.05);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .07);
+  --elevate-1: rgba(0,0,0,.03);
+  --elevate-2: rgba(0,0,0,.07);
 
-  --background: 220 30% 98%;
-  --foreground: 222 47% 11%;
+  --background: 226 40% 97%;
+  --foreground: 228 50% 10%;
 
-  --border: 220 20% 90%;
+  --border: 226 28% 88%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 220 20% 92%;
+  --card-foreground: 228 50% 10%;
+  --card-border: 226 28% 90%;
 
-  --sidebar: 220 30% 97%;
-  --sidebar-foreground: 222 30% 22%;
-  --sidebar-border: 220 20% 90%;
-  --sidebar-primary: 224 80% 52%;
+  --sidebar: 226 40% 96%;
+  --sidebar-foreground: 228 35% 20%;
+  --sidebar-border: 226 28% 88%;
+  --sidebar-primary: 232 88% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 25% 92%;
-  --sidebar-accent-foreground: 222 47% 11%;
-  --sidebar-ring: 224 80% 52%;
+  --sidebar-accent: 226 30% 90%;
+  --sidebar-accent-foreground: 228 50% 10%;
+  --sidebar-ring: 232 88% 60%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 220 20% 90%;
+  --popover-foreground: 228 50% 10%;
+  --popover-border: 226 28% 88%;
 
-  --primary: 224 80% 52%;
+  /* Primary: the blue middle of the Q gradient */
+  --primary: 232 88% 60%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 174 78% 41%;
+  /* Secondary: the cyan top of Q */
+  --secondary: 200 95% 48%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 220 20% 94%;
-  --muted-foreground: 222 15% 45%;
+  --muted: 226 28% 92%;
+  --muted-foreground: 228 18% 45%;
 
-  --accent: 174 78% 41%;
+  --accent: 270 82% 62%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 80% 55%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 220 20% 88%;
-  --ring: 224 80% 52%;
+  --input: 226 28% 86%;
+  --ring: 232 88% 60%;
 
-  --chart-1: 224 80% 52%;
-  --chart-2: 174 78% 41%;
-  --chart-3: 262 70% 60%;
+  --chart-1: 232 88% 60%;
+  --chart-2: 200 95% 48%;
+  --chart-3: 270 82% 62%;
   --chart-4: 38 92% 55%;
   --chart-5: 340 80% 60%;
 
@@ -127,13 +129,15 @@
   --app-font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: 1rem;
 
-  --shadow-sm: 0px 2px 4px -1px rgba(15, 23, 42, 0.06);
-  --shadow: 0px 4px 8px -2px rgba(15, 23, 42, 0.08), 0px 2px 4px -2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0px 8px 16px -4px rgba(15, 23, 42, 0.10), 0px 4px 8px -4px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0px 12px 28px -6px rgba(29, 78, 216, 0.18), 0px 6px 12px -6px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0px 2px 6px -1px rgba(15,23,80,0.07);
+  --shadow: 0px 4px 12px -2px rgba(15,23,80,0.10), 0px 2px 4px -2px rgba(15,23,80,0.05);
+  --shadow-md: 0px 8px 20px -4px rgba(60,60,200,0.12), 0px 4px 8px -4px rgba(15,23,80,0.06);
+  --shadow-lg: 0px 16px 40px -8px rgba(100,60,255,0.22), 0px 6px 12px -6px rgba(15,23,80,0.10);
 
-  --qovo-gradient: linear-gradient(135deg, hsl(224 80% 52%) 0%, hsl(190 80% 48%) 50%, hsl(174 78% 45%) 100%);
-  --qovo-gradient-soft: linear-gradient(135deg, hsl(224 80% 52% / 0.10) 0%, hsl(174 78% 45% / 0.10) 100%);
+  /* Q logo exact gradient: cyan→blue→purple */
+  --qovo-gradient: linear-gradient(135deg, #00B4FF 0%, #4060FF 50%, #9333FF 100%);
+  --qovo-gradient-soft: linear-gradient(135deg, rgba(0,180,255,0.12) 0%, rgba(147,51,255,0.12) 100%);
+  --qovo-gradient-dark: linear-gradient(135deg, #0080CC 0%, #2D44CC 50%, #6B22CC 100%);
 
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -144,67 +148,78 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* Qovo — DARK MODE */
+/* ─── Qovo DARK MODE — deep navy like Q logo background ─── */
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255,.12);
+  --badge-outline: rgba(255,255,255,.06);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255,.04);
+  --elevate-2: rgba(255,255,255,.09);
 
-  --background: 222 40% 8%;
-  --foreground: 210 35% 96%;
+  /* Deep navy — exact Q logo background feel */
+  --background: 228 45% 7%;
+  --foreground: 220 30% 95%;
 
-  --border: 220 25% 18%;
+  --border: 228 30% 16%;
 
-  --card: 222 35% 11%;
-  --card-foreground: 210 35% 96%;
-  --card-border: 220 25% 20%;
+  --card: 228 42% 10%;
+  --card-foreground: 220 30% 95%;
+  --card-border: 228 30% 17%;
 
-  --sidebar: 222 40% 9%;
-  --sidebar-foreground: 210 25% 88%;
-  --sidebar-border: 220 25% 18%;
-  --sidebar-primary: 220 90% 62%;
+  --sidebar: 228 48% 6%;
+  --sidebar-foreground: 220 25% 85%;
+  --sidebar-border: 228 30% 14%;
+  --sidebar-primary: 220 95% 65%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 25% 18%;
-  --sidebar-accent-foreground: 210 35% 96%;
-  --sidebar-ring: 220 90% 62%;
+  --sidebar-accent: 228 35% 14%;
+  --sidebar-accent-foreground: 220 30% 95%;
+  --sidebar-ring: 220 95% 65%;
 
-  --popover: 222 35% 11%;
-  --popover-foreground: 210 35% 96%;
-  --popover-border: 220 25% 20%;
+  --popover: 228 42% 10%;
+  --popover-foreground: 220 30% 95%;
+  --popover-border: 228 30% 17%;
 
-  --primary: 220 90% 62%;
+  --primary: 220 95% 65%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 174 80% 48%;
-  --secondary-foreground: 0 0% 8%;
+  --secondary: 200 100% 55%;
+  --secondary-foreground: 0 0% 6%;
 
-  --muted: 220 25% 18%;
-  --muted-foreground: 220 12% 65%;
+  --muted: 228 35% 14%;
+  --muted-foreground: 220 15% 60%;
 
-  --accent: 174 80% 48%;
-  --accent-foreground: 0 0% 8%;
+  --accent: 270 85% 68%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 75% 55%;
+  --destructive: 0 75% 58%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 220 25% 22%;
-  --ring: 220 90% 62%;
+  --input: 228 30% 18%;
+  --ring: 220 95% 65%;
 
-  --chart-1: 220 90% 62%;
-  --chart-2: 174 80% 48%;
-  --chart-3: 262 70% 65%;
-  --chart-4: 38 92% 60%;
+  --chart-1: 220 95% 65%;
+  --chart-2: 200 100% 55%;
+  --chart-3: 270 85% 68%;
+  --chart-4: 38 92% 62%;
   --chart-5: 340 80% 65%;
 
-  --shadow-sm: 0px 2px 4px -1px rgba(0, 0, 0, 0.4);
-  --shadow: 0px 4px 8px -2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0px 8px 16px -4px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0px 12px 28px -6px rgba(20, 184, 166, 0.18), 0px 6px 12px -6px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0px 2px 8px -1px rgba(0,0,0,0.5);
+  --shadow: 0px 4px 12px -2px rgba(0,0,0,0.55);
+  --shadow-md: 0px 8px 24px -4px rgba(0,0,0,0.6);
+  --shadow-lg: 0px 16px 48px -8px rgba(100,60,255,0.3), 0px 6px 16px -6px rgba(0,0,0,0.6);
 
-  --qovo-gradient: linear-gradient(135deg, hsl(220 90% 62%) 0%, hsl(190 85% 55%) 50%, hsl(174 80% 50%) 100%);
-  --qovo-gradient-soft: linear-gradient(135deg, hsl(220 90% 62% / 0.18) 0%, hsl(174 80% 48% / 0.18) 100%);
+  /* Q logo exact gradient (brighter on dark) */
+  --qovo-gradient: linear-gradient(135deg, #22CCFF 0%, #4C6EFF 50%, #A855F7 100%);
+  --qovo-gradient-soft: linear-gradient(135deg, rgba(34,204,255,0.15) 0%, rgba(168,85,247,0.15) 100%);
+  --qovo-gradient-dark: linear-gradient(135deg, #0099CC 0%, #3344CC 50%, #7722BB 100%);
+
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
 @layer base {
@@ -217,6 +232,7 @@
 }
 
 @layer utilities {
+  /* Core brand gradient utilities — based on Q logo */
   .qovo-gradient { background: var(--qovo-gradient); }
   .qovo-gradient-text {
     background: var(--qovo-gradient);
@@ -225,8 +241,63 @@
     color: transparent;
   }
   .qovo-gradient-soft { background: var(--qovo-gradient-soft); }
-  .qovo-glow { box-shadow: 0 8px 32px -8px hsl(220 90% 55% / 0.45); }
-  .qovo-glow-teal { box-shadow: 0 8px 32px -8px hsl(174 80% 45% / 0.45); }
+
+  /* Glow effects matching Q logo radiance */
+  .qovo-glow {
+    box-shadow: 0 0 24px -4px rgba(70, 100, 255, 0.50),
+                0 0 60px -12px rgba(147, 51, 255, 0.25);
+  }
+  .qovo-glow-sm {
+    box-shadow: 0 0 12px -2px rgba(70, 100, 255, 0.35),
+                0 0 30px -8px rgba(147, 51, 255, 0.20);
+  }
+  .qovo-glow-lg {
+    box-shadow: 0 0 40px -6px rgba(34, 204, 255, 0.40),
+                0 0 80px -20px rgba(147, 51, 255, 0.35);
+  }
+  .qovo-glow-teal {
+    box-shadow: 0 0 24px -4px rgba(34, 204, 255, 0.50);
+  }
+  .qovo-glow-purple {
+    box-shadow: 0 0 24px -4px rgba(168, 85, 247, 0.50);
+  }
+
+  /* Glassmorphism card */
+  .glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .glass-light {
+    background: rgba(255, 255, 255, 0.70);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+  }
+
+  /* Animated gradient border */
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--qovo-gradient);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Logo glow ring used on splash / nav */
+  .logo-glow-ring {
+    filter: drop-shadow(0 0 18px rgba(70,100,255,0.60))
+            drop-shadow(0 0 40px rgba(147,51,255,0.35));
+  }
 
   input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
   [contenteditable][data-placeholder]:empty::before {
@@ -260,4 +331,34 @@
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after { inset: -1px; }
+}
+
+/* ── Splash screen keyframes ─────────────────────────────────────── */
+@keyframes splash-fade-in {
+  from { opacity: 0; transform: scale(0.82); filter: blur(12px); }
+  to   { opacity: 1; transform: scale(1);    filter: blur(0); }
+}
+@keyframes splash-text-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes splash-bar {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+@keyframes splash-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.08); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
 }

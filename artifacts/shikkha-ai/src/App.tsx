@@ -2,9 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useState, useCallback } from "react";
 
 import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { SplashScreen } from "@/components/SplashScreen";
 
 import Home from "@/pages/home";
 import Subjects from "@/pages/subjects/index";
@@ -31,8 +33,8 @@ function Router() {
       <Route path="/subjects/:subjectId" component={SubjectDetail} />
       <Route path="/practice/:chapterId" component={Practice} />
       <Route path="/tests" component={Tests} />
-      <Route path="/tests/:testId" component={TestTaking} />
       <Route path="/tests/subject/:subjectId" component={SubjectTest} />
+      <Route path="/tests/:testId" component={TestTaking} />
       <Route path="/tests/:testId/result" component={TestResult} />
       <Route path="/progress" component={Progress} />
       <Route path="/leaderboard" component={Leaderboard} />
@@ -46,9 +48,20 @@ function Router() {
 }
 
 function App() {
+  const [splashDone, setSplashDone] = useState(
+    () =>
+      sessionStorage.getItem("qovo-splash-seen") === "1" ||
+      new URLSearchParams(window.location.search).has("nosplash"),
+  );
+  const handleSplashDone = useCallback(() => {
+    sessionStorage.setItem("qovo-splash-seen", "1");
+    setSplashDone(true);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        {!splashDone && <SplashScreen onDone={handleSplashDone} />}
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AppLayout>
             <Router />
