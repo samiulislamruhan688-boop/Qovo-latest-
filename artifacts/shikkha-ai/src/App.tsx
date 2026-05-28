@@ -12,6 +12,7 @@ import Home from "@/pages/home";
 import Subjects from "@/pages/subjects/index";
 import SubjectDetail from "@/pages/subjects/[id]";
 import Practice from "@/pages/practice/[id]";
+import MultiPractice from "@/pages/practice/multi";
 import Tests from "@/pages/tests/index";
 import TestTaking from "@/pages/tests/[id]/index";
 import TestResult from "@/pages/tests/[id]/result";
@@ -22,6 +23,7 @@ import Chat from "@/pages/chat/[id]";
 import ImportPage from "@/pages/import";
 import ReviewPage from "@/pages/review";
 import SubjectTest from "@/pages/tests/subject/[subjectId]";
+import ProfilePage from "@/pages/profile";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +31,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/profile" component={ProfilePage} />
       <Route path="/subjects" component={Subjects} />
       <Route path="/subjects/:subjectId" component={SubjectDetail} />
+      <Route path="/practice/multi" component={MultiPractice} />
       <Route path="/practice/:chapterId" component={Practice} />
       <Route path="/tests" component={Tests} />
       <Route path="/tests/subject/:subjectId" component={SubjectTest} />
