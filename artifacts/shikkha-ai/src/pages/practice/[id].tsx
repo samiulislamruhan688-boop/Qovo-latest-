@@ -243,7 +243,7 @@ export default function Practice() {
   const hasSource = current.base.source || current.base.year;
 
   return (
-    <div className="max-w-3xl mx-auto pb-28">
+    <div className="max-w-3xl mx-auto pb-[150px] md:pb-28">
       {/* ── Top control bar ── */}
       <div ref={cardRef} className="flex items-center justify-between mb-3">
         <Link href="/subjects">
@@ -460,12 +460,11 @@ export default function Practice() {
 
       {/* ── STICKY BOTTOM ACTION BAR ── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60"
+        className="fixed bottom-16 md:bottom-0 left-0 right-0 z-[60] border-t border-border/60"
         style={{
-          background: "hsl(var(--background) / 0.95)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          paddingBottom: "env(safe-area-inset-bottom)",
+          background: "hsl(var(--background) / 0.97)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
         }}
       >
         <div className="max-w-3xl mx-auto px-4 py-3">

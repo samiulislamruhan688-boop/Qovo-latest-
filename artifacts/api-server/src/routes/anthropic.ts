@@ -179,4 +179,27 @@ router.post("/anthropic/conversations/:id/messages", async (req, res): Promise<v
   }
 });
 
+/* ── Quick one-shot chat endpoint (used by test result & subject pages) ── */
+router.post("/chat", async (req, res): Promise<void> => {
+  const { message } = req.body as { message?: string };
+  if (!message || typeof message !== "string") {
+    res.status(400).json({ error: "message required" });
+    return;
+  }
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: message }],
+    });
+    const reply =
+      response.content[0].type === "text" ? response.content[0].text : "";
+    res.json({ reply });
+  } catch (err) {
+    req.log.error({ err }, "Quick chat failed");
+    res.status(500).json({ reply: "AI বিশ্লেষণ এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।" });
+  }
+});
+
 export default router;
