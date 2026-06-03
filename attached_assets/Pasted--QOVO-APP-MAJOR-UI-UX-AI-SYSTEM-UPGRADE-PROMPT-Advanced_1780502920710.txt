@@ -1,0 +1,606 @@
+# QOVO APP – MAJOR UI/UX & AI SYSTEM UPGRADE PROMPT
+
+# Advanced Improvements & Feature Enhancements
+
+# For Lovable AI / Replit AI
+
+IMPORTANT:
+This is NOT a redesign of the app.
+
+The existing structure must remain intact.
+
+The following improvements and upgrades must be implemented carefully while preserving all existing functionality.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. MCQ PRACTICE SECTION IMPROVEMENT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Problem:
+
+Inside Practice Mode, the buttons:
+
+* "পরবর্তী" (Next)
+* "সেশন শেষ করুন" (End Session)
+
+are positioned too low.
+
+Students must scroll slightly to access them.
+
+This interrupts fast MCQ solving and reduces practice speed.
+
+══════════════════════════════
+
+Required Solution:
+
+The navigation controls must always remain visible within the device screen.
+
+Requirements:
+
+✅ No extra scrolling required.
+
+✅ Next button always visible.
+
+✅ End Session button always visible.
+
+✅ Mobile-first design.
+
+✅ One-hand usability.
+
+✅ Fast practice experience.
+
+══════════════════════════════
+
+Recommended Layout:
+
+Sticky Bottom Action Bar
+
+Contains:
+
+* Previous (optional)
+* Next Question
+* End Session
+
+Behavior:
+
+* Always fixed to footer
+* Never hidden below screen
+* Works on all phone sizes
+* Auto-adjust for different screen resolutions
+
+Goal:
+
+Student should be able to solve 100+ MCQs rapidly without unnecessary scrolling.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. QUESTION SOURCE INFORMATION SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Problem:
+
+While adding questions to the database, source information is stored.
+
+Example:
+
+* Board Name
+* Year
+* School Name
+* College Name
+* Exam Date
+
+However these details are not visible during practice.
+
+══════════════════════════════
+
+Required Feature:
+
+Every question should display its source information elegantly.
+
+Display Location:
+
+Top-right corner or top section of question card.
+
+Style:
+
+Small
+Professional
+Non-distracting
+Readable
+
+══════════════════════════════
+
+Must Display:
+
+1. Board Name + Year
+
+Examples:
+
+Dhaka Board 2024
+Rajshahi Board 2023
+Chattogram Board 2025
+
+2. School / College Name
+
+Examples:
+
+Govt. Science College
+Dhaka College
+Ideal School
+
+3. Exam Date
+
+Example:
+
+12 February 2025
+
+══════════════════════════════
+
+Question Category Badge
+
+Display AI-detected category:
+
+* জ্ঞানমূলক
+* অনুধাবনমূলক
+* প্রয়োগমূলক
+* উচ্চতর দক্ষতা
+
+System:
+
+AI automatically determines category from question structure.
+
+Display as:
+
+Color-coded badge
+
+Example:
+
+[জ্ঞানমূলক]
+[অনুধাবনমূলক]
+[উচ্চতর দক্ষতা]
+
+This creates a professional board-exam feeling.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. EXPLANATION SECTION IMPROVEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Problem:
+
+Explanation text is too small and difficult to read.
+
+Required Upgrade:
+
+✅ Larger font size
+
+✅ Better line spacing
+
+✅ Better contrast
+
+✅ Cleaner card design
+
+✅ Easier readability
+
+Additional Features:
+
+* Key Point Highlight
+* Formula Highlight
+* Important Line Highlight
+* AI Summary
+
+Optional:
+
+"Explain Simpler" Button
+
+AI rewrites explanation in easier language.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. MODEL TEST SYSTEM COMPLETE REWORK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Limitation:
+
+Model Test depends too much on subject selection.
+
+This is not flexible enough.
+
+══════════════════════════════
+
+Required New System:
+
+Model Test should support:
+
+Subject Based Test
+
+Chapter Based Test
+
+Topic Based Test
+
+Mixed Test
+
+Weak Area Test
+
+Revision Test
+
+Board Question Test
+
+══════════════════════════════
+
+Student Flow:
+
+Step 1:
+
+Choose Mode
+
+* Subject Test
+* Chapter Test
+* Topic Test
+* Mixed Test
+
+Step 2:
+
+Select Chapters
+
+Examples:
+
+☑ Chapter 1
+☑ Chapter 3
+☑ Chapter 5
+
+Step 3:
+
+Generate Test
+
+AI builds exam automatically.
+
+══════════════════════════════
+
+AI Smart Test Generator
+
+AI should:
+
+* Analyze student history
+* Analyze weak chapters
+* Analyze past mistakes
+* Create balanced tests
+
+Result:
+
+Every test feels unique.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. STICKY MODEL TEST FOOTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Problem:
+
+After finishing exam, user must scroll all the way up/down to submit.
+
+This creates a poor exam experience.
+
+══════════════════════════════
+
+Required Solution:
+
+Create a Persistent Exam Footer.
+
+Always Visible.
+
+Never Hidden.
+
+══════════════════════════════
+
+Footer Must Contain:
+
+⏱ Remaining Time
+
+Question Count
+
+Answered Count
+
+Unanswered Count
+
+Submit Button
+
+Review Button
+
+══════════════════════════════
+
+Behavior:
+
+Visible during entire exam.
+
+Even while scrolling.
+
+Mobile optimized.
+
+Professional exam interface.
+
+Goal:
+
+Student can submit at any moment.
+
+Student can always see remaining time.
+
+Real exam feeling.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. ADVANCED AI PERFORMANCE ANALYSIS 2.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is one of the MOST IMPORTANT upgrades.
+
+Current AI analysis is too basic.
+
+The new system must be extremely advanced.
+
+Think of it as a personal academic coach.
+
+══════════════════════════════
+
+AI Must Analyze:
+
+Accuracy
+
+Speed
+
+Time Management
+
+Question Pattern
+
+Weak Chapters
+
+Weak Subjects
+
+Repeated Mistakes
+
+Knowledge Gaps
+
+Exam Readiness
+
+Consistency
+
+Focus Level
+
+Revision Needs
+
+══════════════════════════════
+
+After Every Model Test:
+
+AI Generates Detailed Report
+
+Example:
+
+YOUR CURRENT POSITION
+
+Estimated Level:
+Top 20%
+
+SSC Readiness:
+78%
+
+Strengths:
+
+* Physics Numericals
+* Biology MCQ
+
+Weaknesses:
+
+* Chemistry Reactions
+* English Grammar
+
+══════════════════════════════
+
+AI Must Recommend:
+
+What to revise
+
+What to practice
+
+Which chapter needs focus
+
+Which subject needs urgent attention
+
+Suggested routine
+
+Suggested weekly target
+
+══════════════════════════════
+
+ADVANCED PREDICTIONS
+
+AI Should Estimate:
+
+Expected GPA Range
+
+Exam Preparedness
+
+Probability of Improvement
+
+Projected Performance Trend
+
+Revision Urgency Score
+
+Confidence Score
+
+══════════════════════════════
+
+AI Dashboard Must Include:
+
+Performance Radar Chart
+
+Subject Heatmap
+
+Improvement Graph
+
+Weakness Graph
+
+Study Trend Graph
+
+Learning Velocity
+
+Mastery Level
+
+AI Confidence Meter
+
+This section should feel like a professional analytics platform.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. PROFILE SYSTEM IMPROVEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Issue:
+
+Some buttons feel decorative and non-functional.
+
+This must be fixed.
+
+Every button should perform a real action.
+
+No fake UI.
+
+No placeholder buttons.
+
+No dead clicks.
+
+══════════════════════════════
+
+Profile Features Must Work:
+
+Change Profile Picture
+
+Change Cover Photo
+
+Edit Name
+
+Edit Username
+
+Edit Bio
+
+Edit School
+
+Edit College Target
+
+Edit District
+
+Edit Group
+
+Save Changes
+
+Cloud Sync
+
+Everything functional.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. SMART SSC BATCH SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current batch options are static.
+
+Replace with dynamic system.
+
+System automatically detects current year.
+
+Example:
+
+Current Year = 2026
+
+Show:
+
+SSC 2026
+SSC 2027
+SSC 2028
+
+Custom Batch
+
+Future years update automatically.
+
+══════════════════════════════
+
+Batch Features:
+
+Exam Countdown
+
+Routine Suggestions
+
+Preparation Tracking
+
+Motivation System
+
+Batch Community
+
+Batch Leaderboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. FUTURE-READY PROFILE UPGRADES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add:
+
+Study Hours Tracker
+
+Achievement History
+
+Recent Activities
+
+Recent Practice
+
+Recent Tests
+
+Bookmarks
+
+Saved Questions
+
+Saved Formulas
+
+Favourite Chapters
+
+AI Learning Insights
+
+Revision Calendar
+
+Study Heatmap
+
+Personal Goals
+
+Pomodoro History
+
+Study Streak Calendar
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. FINAL GOAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QOVO should no longer feel like a simple MCQ app.
+
+It should feel like:
+
+✅ AI-Powered SSC Learning Platform
+
+✅ Smart Exam Simulator
+
+✅ Personal Academic Coach
+
+✅ Data-Driven Study Assistant
+
+✅ Premium Educational Ecosystem
+
+Every interaction should be:
+
+Fast
+Intelligent
+Useful
+Professional
+Modern
+Student-Friendly
+
+The app must prioritize:
+
+* Zero unnecessary scrolling
+* Maximum usability
+* Maximum learning efficiency
+* Real exam feeling
+* Deep AI analytics
+* Fully functional profile system
+* Future scalability
+* Premium user experience

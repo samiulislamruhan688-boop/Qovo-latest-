@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useListQuestionsByChapter, useSubmitPracticeAnswer } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,9 @@ import {
   Shuffle,
   BookmarkCheck,
   RotateCcw,
+  Calendar,
+  BookOpen,
+  Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -30,6 +33,8 @@ type QuestionLike = {
   difficulty: string;
   hint?: string | null;
   explanation: string;
+  source?: string | null;
+  year?: number | null;
 };
 
 interface ShuffledQuestion {
@@ -51,6 +56,18 @@ function buildShuffled(questions: QuestionLike[]): ShuffledQuestion[] {
     base: q,
     displayOrder: shuffleArray(q.options.map((_, i) => i)),
   }));
+}
+
+/** Detect question category from text heuristically */
+function detectCategory(text: string): { label: string; color: string } {
+  const t = text;
+  if (/কোনটি|কী|কে|কত|কোন/.test(t) && t.length < 80)
+    return { label: "জ্ঞানমূলক", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" };
+  if (/ব্যাখ্যা|কারণ|কেন|কীভাবে/.test(t))
+    return { label: "অনুধাবনমূলক", color: "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300" };
+  if (/হলে|যদি|গণনা|নির্ণয়|বের/.test(t))
+    return { label: "প্রয়োগমূলক", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" };
+  return { label: "উচ্চতর দক্ষতা", color: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" };
 }
 
 export default function Practice() {
@@ -82,9 +99,12 @@ export default function Practice() {
   const [hintRevealed, setHintRevealed] = useState(false);
   const [sessionWrong, setSessionWrong] = useState(0);
   const [sessionCorrect, setSessionCorrect] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHintRevealed(false);
+    // Scroll back to top of question on change
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [currentIndex]);
 
   const current = shuffled[currentIndex];
@@ -140,13 +160,11 @@ export default function Practice() {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6 pb-32">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          ))}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
       </div>
     );
@@ -156,9 +174,7 @@ export default function Practice() {
     return (
       <div className="max-w-2xl mx-auto text-center py-20">
         <h2 className="text-2xl font-bold mb-4">কোনো প্রশ্ন পাওয়া যায়নি</h2>
-        <Link href="/subjects">
-          <Button>ফিরে যান</Button>
-        </Link>
+        <Link href="/subjects"><Button>ফিরে যান</Button></Link>
       </div>
     );
   }
@@ -196,14 +212,12 @@ export default function Practice() {
             <span>{sessionWrong}টি ভুল উত্তর রিভিউ লিস্টে সেভ হয়েছে</span>
           </div>
         )}
-        <p className="text-muted-foreground text-sm">আবার এলোমেলো করে চেষ্টা করো!</p>
         <div className="flex gap-3 justify-center pt-2">
           <Link href="/subjects">
             <Button variant="outline">অন্য বিষয়</Button>
           </Link>
           <Button onClick={restart} className="qovo-gradient text-white border-0">
-            <Shuffle className="w-4 h-4 mr-2" />
-            আবার এলোমেলো
+            <Shuffle className="w-4 h-4 mr-2" /> আবার এলোমেলো
           </Button>
         </div>
         {wrongAnswers.length > 0 && (
@@ -225,11 +239,15 @@ export default function Practice() {
         ? current.base.explanation.slice(0, 60) + "…"
         : current.base.explanation;
 
+  const category = detectCategory(current.base.questionText);
+  const hasSource = current.base.source || current.base.year;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <Link href={`/subjects`}>
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+    <div className="max-w-3xl mx-auto pb-28">
+      {/* ── Top control bar ── */}
+      <div ref={cardRef} className="flex items-center justify-between mb-3">
+        <Link href="/subjects">
+          <Button variant="ghost" size="sm" className="text-muted-foreground -ml-2">
             <ChevronLeft className="w-4 h-4 mr-1" /> ফিরে যান
           </Button>
         </Link>
@@ -243,18 +261,16 @@ export default function Practice() {
             type="button"
             onClick={restart}
             className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 text-muted-foreground flex items-center gap-1.5 transition-colors"
-            title="প্রশ্ন আবার এলোমেলো করুন"
           >
-            <Shuffle className="w-3.5 h-3.5" />
-            শাফল
+            <Shuffle className="w-3.5 h-3.5" /> শাফল
           </button>
-          <div className="text-sm font-medium text-muted-foreground tabular-nums">
-            {currentIndex + 1} / {shuffled.length}
+          <div className="text-sm font-semibold text-muted-foreground tabular-nums">
+            {currentIndex + 1}<span className="opacity-50">/{shuffled.length}</span>
           </div>
         </div>
       </div>
 
-      <Progress value={(currentIndex / shuffled.length) * 100} className="h-1.5" />
+      <Progress value={(currentIndex / shuffled.length) * 100} className="h-1.5 mb-4" />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -263,17 +279,46 @@ export default function Practice() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="space-y-5"
+          className="space-y-3"
         >
-          <Card className="border-border shadow-md">
-            <CardContent className="p-6 md:p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                  {current.base.difficulty === "easy"
-                    ? "সহজ"
-                    : current.base.difficulty === "medium"
-                      ? "মাঝারি"
-                      : "কঠিন"}
+          {/* ── Question card ── */}
+          <Card className="border-border shadow-md overflow-hidden">
+            {/* Top source strip */}
+            {hasSource && (
+              <div className="px-5 pt-4 pb-2 flex items-center gap-2 flex-wrap">
+                {current.base.source && (
+                  <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                    <BookOpen className="w-3 h-3" />
+                    {current.base.source}
+                  </span>
+                )}
+                {current.base.year && (
+                  <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                    <Calendar className="w-3 h-3" />
+                    {current.base.year}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <CardContent className={cn("p-5 md:p-6", hasSource && "pt-2")}>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-2.5 py-1 rounded-full",
+                      current.base.difficulty === "easy"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : current.base.difficulty === "medium"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                          : "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+                    )}
+                  >
+                    {current.base.difficulty === "easy" ? "সহজ" : current.base.difficulty === "medium" ? "মাঝারি" : "কঠিন"}
+                  </span>
+                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", category.color)}>
+                    {category.label}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -283,18 +328,19 @@ export default function Practice() {
                     "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all",
                     hintRevealed
                       ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                      : "bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:hover:bg-amber-950/60 dark:text-amber-300 hover:scale-105",
+                      : "bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:hover:bg-amber-950/60 dark:text-amber-300",
                     selectedDisplayIdx !== null && "opacity-40 cursor-not-allowed",
                   )}
-                  aria-label="সংকেত দেখুন"
                 >
                   <Lightbulb className={cn("w-3.5 h-3.5", hintRevealed && "fill-current")} />
                   {hintRevealed ? "সংকেত দেখানো হয়েছে" : "সংকেত (Hint)"}
                 </button>
               </div>
+
               <h2 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
                 {current.base.questionText}
               </h2>
+
               <AnimatePresence>
                 {hintRevealed && (
                   <motion.div
@@ -304,7 +350,7 @@ export default function Practice() {
                     className="overflow-hidden"
                   >
                     <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-100">
-                      <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-300" />
+                      <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
                       <p className="text-sm leading-relaxed">{hintText}</p>
                     </div>
                   </motion.div>
@@ -313,7 +359,8 @@ export default function Practice() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-3">
+          {/* ── Options ── */}
+          <div className="grid gap-2.5">
             {current.displayOrder.map((originalIdx, displayIdx) => {
               const option = current.base.options[originalIdx];
               const isSelected = selectedDisplayIdx === displayIdx;
@@ -330,113 +377,137 @@ export default function Practice() {
                   disabled={isSubmitted || submitAnswer.isPending}
                   className={cn(
                     "relative flex items-center p-4 rounded-xl border-2 text-left transition-all duration-200",
-                    !isSubmitted &&
-                      "border-border hover:border-primary/50 hover:bg-muted/50 bg-card cursor-pointer",
-                    isSubmitted &&
-                      isCorrect &&
-                      "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100",
-                    isSubmitted &&
-                      isWrongSelected &&
-                      "border-destructive bg-destructive/10 text-destructive",
-                    isSubmitted &&
-                      !isCorrect &&
-                      !isWrongSelected &&
-                      "border-border bg-muted/40 opacity-50 cursor-not-allowed",
+                    !isSubmitted && "border-border hover:border-primary/50 hover:bg-muted/50 bg-card cursor-pointer",
+                    isSubmitted && isCorrect && "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100",
+                    isSubmitted && isWrongSelected && "border-destructive bg-destructive/10 text-destructive",
+                    isSubmitted && !isCorrect && !isWrongSelected && "border-border bg-muted/40 opacity-50 cursor-not-allowed",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-semibold text-sm transition-all",
-                      !isSubmitted && "border-border text-muted-foreground",
-                      isSubmitted && isCorrect && "border-emerald-500 bg-emerald-500 text-white",
-                      isSubmitted && isWrongSelected && "border-destructive bg-destructive text-white",
-                      isSubmitted && !isCorrect && !isWrongSelected && "border-border text-muted-foreground",
-                    )}
-                  >
+                  <div className={cn(
+                    "flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 font-bold text-sm transition-all",
+                    !isSubmitted && "border-border text-muted-foreground",
+                    isSubmitted && isCorrect && "border-emerald-500 bg-emerald-500 text-white",
+                    isSubmitted && isWrongSelected && "border-destructive bg-destructive text-white",
+                    isSubmitted && !isCorrect && !isWrongSelected && "border-border text-muted-foreground",
+                  )}>
                     {String.fromCharCode(65 + displayIdx)}
                   </div>
-                  <span className="flex-1 font-medium">{option}</span>
-                  {isSubmitted && isCorrect && (
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute right-4" />
-                  )}
-                  {isSubmitted && isWrongSelected && (
-                    <XCircle className="w-6 h-6 text-destructive absolute right-4" />
-                  )}
+                  <span className="flex-1 font-medium text-[15px] leading-snug">{option}</span>
+                  {isSubmitted && isCorrect && <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute right-4" />}
+                  {isSubmitted && isWrongSelected && <XCircle className="w-6 h-6 text-destructive absolute right-4" />}
                 </motion.button>
               );
             })}
           </div>
 
+          {/* ── Explanation (inline, no button here) ── */}
           <AnimatePresence>
             {answerResult && (
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22 }}
-                className="overflow-hidden"
               >
-                <Card
-                  className={cn(
-                    "border-l-4",
-                    answerResult.correct ? "border-l-emerald-500" : "border-l-orange-500",
-                  )}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={cn(
-                          "p-2 rounded-full",
-                          answerResult.correct
-                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40"
-                            : "bg-orange-100 text-orange-600 dark:bg-orange-900/40",
-                        )}
-                      >
-                        {answerResult.correct ? (
-                          <CheckCircle2 className="w-6 h-6" />
-                        ) : (
-                          <RotateCcw className="w-6 h-6" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg mb-2">
-                          {answerResult.correct
-                            ? `✅ সঠিক! +${answerResult.pointsEarned} পয়েন্ট`
-                            : "❌ ভুল — সঠিক উত্তরটি হলো:"}
-                        </h3>
-                        {!answerResult.correct && (
-                          <p className="font-medium text-foreground mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-lg text-emerald-800 dark:text-emerald-200">
-                            ✓ {current.base.options[answerResult.correctIndex]}
-                          </p>
-                        )}
-                        <p className="text-muted-foreground leading-relaxed text-sm">
-                          📖 {answerResult.explanation}
-                        </p>
-                        {!answerResult.correct && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                            <BookmarkCheck className="w-3.5 h-3.5" />
-                            এই প্রশ্নটি রিভিউ লিস্টে সেভ হয়েছে
-                          </p>
-                        )}
-                      </div>
+                <div className={cn(
+                  "rounded-2xl border-l-4 p-5",
+                  answerResult.correct
+                    ? "border-l-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50"
+                    : "border-l-orange-500 bg-orange-50/80 dark:bg-orange-950/10 border border-orange-200 dark:border-orange-900/50",
+                )}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
+                      answerResult.correct ? "bg-emerald-500 text-white" : "bg-orange-500 text-white",
+                    )}>
+                      {answerResult.correct ? <CheckCircle2 className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
                     </div>
+                    <span className="font-bold text-base">
+                      {answerResult.correct
+                        ? `সঠিক! +${answerResult.pointsEarned} পয়েন্ট`
+                        : "ভুল হয়েছে — সঠিক উত্তর:"}
+                    </span>
+                  </div>
 
-                    <div className="mt-6 flex justify-end">
-                      <Button
-                        onClick={handleNext}
-                        size="lg"
-                        className="rounded-full px-8 qovo-gradient text-white border-0"
-                      >
-                        {isLastQuestion ? "সেশন শেষ করুন" : "পরবর্তী প্রশ্ন"}
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
+                  {!answerResult.correct && (
+                    <div className="mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-800 dark:text-emerald-200 font-medium flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      {current.base.options[answerResult.correctIndex]}
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+
+                  {/* Explanation text — larger, better spaced */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      <BookOpen className="w-3.5 h-3.5" /> ব্যাখ্যা
+                    </div>
+                    <p className="text-base leading-[1.85] text-foreground">
+                      {answerResult.explanation}
+                    </p>
+                  </div>
+
+                  {!answerResult.correct && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                      <BookmarkCheck className="w-3.5 h-3.5" />
+                      এই প্রশ্নটি রিভিউ লিস্টে সেভ হয়েছে
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
       </AnimatePresence>
+
+      {/* ── STICKY BOTTOM ACTION BAR ── */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60"
+        style={{
+          background: "hsl(var(--background) / 0.95)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          {answerResult ? (
+            /* After answering — show prominent Next button */
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex items-center gap-2 text-sm font-semibold flex-1",
+                answerResult.correct ? "text-emerald-600" : "text-orange-600",
+              )}>
+                {answerResult.correct
+                  ? <><CheckCircle2 className="w-4 h-4" /> সঠিক! +{answerResult.pointsEarned} পয়েন্ট</>
+                  : <><XCircle className="w-4 h-4" /> ভুল হয়েছে</>
+                }
+              </div>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="flex items-center gap-2 py-3 px-6 rounded-2xl text-white font-bold text-base shadow-lg qovo-glow transition-transform active:scale-95"
+                style={{ background: "var(--qovo-gradient)", minWidth: 180 }}
+              >
+                <Zap className="w-4 h-4" />
+                {isLastQuestion ? "সেশন শেষ করুন" : "পরবর্তী প্রশ্ন"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            /* Before answering — show progress info */
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{currentIndex + 1}</span>/{shuffled.length} প্রশ্ন
+                {sessionCorrect > 0 && (
+                  <span className="ml-3 text-emerald-600 font-medium">{sessionCorrect} সঠিক</span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground px-3 py-1.5 bg-muted rounded-full">
+                উত্তর বেছে নাও
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
