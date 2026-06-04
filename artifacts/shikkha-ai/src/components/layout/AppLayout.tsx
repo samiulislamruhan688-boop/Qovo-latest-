@@ -13,6 +13,7 @@ import {
   Moon,
   BookmarkCheck,
   UserCircle2,
+  Database,
 } from "lucide-react";
 import { useGetStreak } from "@workspace/api-client-react";
 import { useTheme } from "@/components/ThemeProvider";
@@ -30,6 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/chat",        label: "টিউটর",         icon: MessageSquare },
     { href: "/review",      label: "রিভিউ",         icon: BookmarkCheck },
     { href: "/profile",     label: "প্রোফাইল",      icon: UserCircle2 },
+    { href: "/source",      label: "উৎস",           icon: Database },
     { href: "/import",      label: "প্রশ্ন যোগ",    icon: PlusSquare },
   ];
 

@@ -71,4 +71,15 @@ router.post("/practice/submit", async (req, res): Promise<void> => {
   );
 });
 
+router.delete("/questions/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+  const deleted = await db
+    .delete(questions)
+    .where(eq(questions.id, id))
+    .returning({ id: questions.id });
+  if (deleted.length === 0) { res.status(404).json({ error: "Question not found" }); return; }
+  res.json({ deleted: true, id });
+});
+
 export default router;

@@ -7,6 +7,7 @@ import testsRouter from "./tests";
 import progressRouter from "./progress";
 import leaderboardRouter from "./leaderboard";
 import anthropicRouter from "./anthropic";
+import sourceNavRouter from "./sourceNav";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(testsRouter);
 router.use(progressRouter);
 router.use(leaderboardRouter);
 router.use(anthropicRouter);
+router.use(sourceNavRouter);
 
 export default router;

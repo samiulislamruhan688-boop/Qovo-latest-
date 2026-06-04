@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, Flag, Lightbulb, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MathText } from "@/components/MathText";
 import { playHush } from "@/hooks/useSound";
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -327,7 +328,7 @@ export default function TestTaking() {
                   </div>
 
                   <h3 className="text-base md:text-lg font-bold text-foreground leading-relaxed mb-4">
-                    {q.questionText}
+                    <MathText>{q.questionText}</MathText>
                   </h3>
 
                   <AnimatePresence>
@@ -375,7 +376,7 @@ export default function TestTaking() {
                           >
                             {String.fromCharCode(65 + displayIdx)}
                           </div>
-                          <span className="font-medium text-sm">{option}</span>
+                          <span className="font-medium text-sm"><MathText>{option}</MathText></span>
                           {isSelected && (
                             <CheckCircle2 className="w-4 h-4 ml-auto text-primary flex-shrink-0" />
                           )}

@@ -101,6 +101,14 @@ export default function ProfilePage() {
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [savedToast,      setSavedToast]      = useState(false);
 
+  // Admin mode
+  const [adminMode, setAdminMode] = useState(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1");
+  const toggleAdminMode = () => {
+    const next = !adminMode;
+    setAdminMode(next);
+    typeof localStorage !== "undefined" && localStorage.setItem("qovo-admin-mode", next ? "1" : "0");
+  };
+
   // Import
   const [code,    setCode]    = useState("");
   const [copied,  setCopied]  = useState(false);
@@ -414,6 +422,24 @@ export default function ProfilePage() {
             </motion.div>
           </Link>
         ))}
+      </div>
+
+      {/* ── Admin Mode Toggle ── */}
+      <div className="flex items-center justify-between p-4 rounded-2xl border border-border bg-card">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${adminMode ? "bg-destructive/15" : "bg-muted"}`}>
+            <Brain className={`w-4.5 h-4.5 ${adminMode ? "text-destructive" : "text-muted-foreground"}`} />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">অ্যাডমিন মোড</div>
+            <div className="text-xs text-muted-foreground">{adminMode ? "সক্রিয় — প্রশ্ন মুছতে পারবেন" : "নিষ্ক্রিয়"}</div>
+          </div>
+        </div>
+        <button type="button" onClick={toggleAdminMode}
+          className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none ${adminMode ? "bg-destructive" : "bg-muted-foreground/30"}`}
+          aria-label="অ্যাডমিন মোড টগল">
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${adminMode ? "translate-x-5" : "translate-x-0"}`} />
+        </button>
       </div>
 
       {/* ── Add Question Section ── */}

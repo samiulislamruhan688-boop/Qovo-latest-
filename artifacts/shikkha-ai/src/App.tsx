@@ -24,6 +24,7 @@ import ImportPage from "@/pages/import";
 import ReviewPage from "@/pages/review";
 import SubjectTest from "@/pages/tests/subject/[subjectId]";
 import ProfilePage from "@/pages/profile";
+import SourcePage from "@/pages/source";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/chat/:conversationId" component={Chat} />
       <Route path="/import" component={ImportPage} />
       <Route path="/review" component={ReviewPage} />
+      <Route path="/source" component={SourcePage} />
       <Route component={NotFound} />
     </Switch>
   );

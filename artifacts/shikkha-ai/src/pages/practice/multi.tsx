@@ -20,11 +20,13 @@ import {
   Calendar,
   BookOpen,
   Zap,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { playHush, playCorrect, playWrong } from "@/hooks/useSound";
 import { useWrongAnswers } from "@/hooks/useWrongAnswers";
+import { MathText } from "@/components/MathText";
 
 type QuestionLike = {
   id: number;
@@ -78,6 +80,15 @@ function useChapterIds(): number[] {
 
 export default function MultiChapterPractice() {
   const chapterIds = useChapterIds();
+  const adminMode = useMemo(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1", []);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const handleDelete = async (id: number) => {
+    try {
+      await fetch(`/api/questions/${id}`, { method: "DELETE" });
+      setDeleteConfirmId(null);
+      window.location.reload();
+    } catch { setDeleteConfirmId(null); }
+  };
   const [allQuestions, setAllQuestions] = useState<QuestionLike[]>([]);
   const [loadingState, setLoadingState] = useState<"loading" | "done" | "error">("loading");
   const [shuffleSeed, setShuffleSeed] = useState(0);
@@ -328,16 +339,31 @@ export default function MultiChapterPractice() {
                   <Lightbulb className={cn("w-3.5 h-3.5", hintRevealed && "fill-current")} />
                   {hintRevealed ? "সংকেত দেখানো হয়েছে" : "সংকেত"}
                 </button>
+                {adminMode && deleteConfirmId !== current.base.id && (
+                  <button type="button" onClick={() => setDeleteConfirmId(current.base.id)}
+                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all">
+                    <Trash2 className="w-3 h-3" /> মুছুন
+                  </button>
+                )}
+                {adminMode && deleteConfirmId === current.base.id && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-destructive font-medium">মুছবেন?</span>
+                    <button type="button" onClick={() => handleDelete(current.base.id)}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white font-semibold">হ্যাঁ</button>
+                    <button type="button" onClick={() => setDeleteConfirmId(null)}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-muted text-foreground">না</button>
+                  </div>
+                )}
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
-                {current.base.questionText}
+                <MathText>{current.base.questionText}</MathText>
               </h2>
               <AnimatePresence>
                 {hintRevealed && (
                   <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 16 }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                     <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-100">
                       <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
-                      <p className="text-sm leading-relaxed">{hintText}</p>
+                      <p className="text-sm leading-relaxed"><MathText>{hintText}</MathText></p>
                     </div>
                   </motion.div>
                 )}
@@ -375,7 +401,7 @@ export default function MultiChapterPractice() {
                   )}>
                     {String.fromCharCode(65 + displayIdx)}
                   </div>
-                  <span className="flex-1 font-medium text-[15px] leading-snug">{option}</span>
+                  <span className="flex-1 font-medium text-[15px] leading-snug"><MathText>{option}</MathText></span>
                   {isSubmitted && isCorrect && <CheckCircle2 className="w-6 h-6 text-emerald-500 absolute right-4" />}
                   {isSubmitted && isWrongSelected && <XCircle className="w-6 h-6 text-destructive absolute right-4" />}
                 </motion.button>
@@ -405,14 +431,14 @@ export default function MultiChapterPractice() {
                   {!answerResult.correct && (
                     <div className="mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-800 dark:text-emerald-200 font-medium flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      {current.base.options[answerResult.correctIndex]}
+                      <MathText>{current.base.options[answerResult.correctIndex]}</MathText>
                     </div>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       <BookOpen className="w-3.5 h-3.5" /> ব্যাখ্যা
                     </div>
-                    <p className="text-base leading-[1.85] text-foreground">{answerResult.explanation}</p>
+                    <p className="text-base leading-[1.85] text-foreground"><MathText>{answerResult.explanation}</MathText></p>
                   </div>
                   {!answerResult.correct && (
                     <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
