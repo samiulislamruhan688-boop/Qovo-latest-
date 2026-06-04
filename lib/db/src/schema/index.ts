@@ -3,6 +3,7 @@ export * from "./messages";
 export * from "./subjects";
 export * from "./chapters";
 export * from "./questions";
+export * from "./errorReports";
 export * from "./tests";
 export * from "./attempts";
 export * from "./userAnswers";

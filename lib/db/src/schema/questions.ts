@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, serial, text } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { chapters } from "./chapters";
 
 export const questions = pgTable("questions", {
@@ -14,6 +14,7 @@ export const questions = pgTable("questions", {
   source: text("source"),
   year: integer("year"),
   hint: text("hint"),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export type Question = typeof questions.$inferSelect;

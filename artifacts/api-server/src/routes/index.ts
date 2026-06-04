@@ -8,6 +8,7 @@ import progressRouter from "./progress";
 import leaderboardRouter from "./leaderboard";
 import anthropicRouter from "./anthropic";
 import sourceNavRouter from "./sourceNav";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(progressRouter);
 router.use(leaderboardRouter);
 router.use(anthropicRouter);
 router.use(sourceNavRouter);
+router.use(adminRouter);
 
 export default router;

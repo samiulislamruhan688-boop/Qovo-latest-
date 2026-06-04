@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 import { db, questions, userAnswers, userStats } from "@workspace/db";
 import {
   ListQuestionsByChapterParams,
@@ -20,7 +20,7 @@ router.get("/chapters/:id/questions", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(questions)
-    .where(eq(questions.chapterId, params.data.id))
+    .where(eq(questions.chapterId, params.data.id) && isNull(questions.deletedAt))
     .orderBy(questions.id);
 
   res.json(ListQuestionsByChapterResponse.parse(rows));
@@ -71,15 +71,17 @@ router.post("/practice/submit", async (req, res): Promise<void> => {
   );
 });
 
+// Soft delete (move to trash) — kept for backward-compat with old clients
 router.delete("/questions/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
-  const deleted = await db
-    .delete(questions)
-    .where(eq(questions.id, id))
+  const updated = await db
+    .update(questions)
+    .set({ deletedAt: new Date() })
+    .where(eq(questions.id, id) && isNull(questions.deletedAt))
     .returning({ id: questions.id });
-  if (deleted.length === 0) { res.status(404).json({ error: "Question not found" }); return; }
-  res.json({ deleted: true, id });
+  if (!updated.length) { res.status(404).json({ error: "Question not found" }); return; }
+  res.json({ trashed: true, id });
 });
 
 export default router;

@@ -14,6 +14,7 @@ import {
   BookmarkCheck,
   UserCircle2,
   Database,
+  ShieldCheck,
 } from "lucide-react";
 import { useGetStreak } from "@workspace/api-client-react";
 import { useTheme } from "@/components/ThemeProvider";
@@ -32,8 +33,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/review",      label: "রিভিউ",         icon: BookmarkCheck },
     { href: "/profile",     label: "প্রোফাইল",      icon: UserCircle2 },
     { href: "/source",      label: "উৎস",           icon: Database },
+    { href: "/admin",       label: "অ্যাডমিন",       icon: ShieldCheck, adminOnly: true },
     { href: "/import",      label: "প্রশ্ন যোগ",    icon: PlusSquare },
   ];
+
+  const isAdmin = typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1";
+  const visibleNav = navItems.filter((item) => !("adminOnly" in item && item.adminOnly) || isAdmin);
 
   // Mobile shows first 5 items + profile
   const mobileNav = [
@@ -108,7 +113,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const isActive =
               location === item.href ||
               (item.href !== "/" && location.startsWith(item.href));

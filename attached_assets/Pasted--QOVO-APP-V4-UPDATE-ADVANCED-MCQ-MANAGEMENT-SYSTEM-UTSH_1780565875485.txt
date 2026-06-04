@@ -1,0 +1,512 @@
+# QOVO APP V4 UPDATE
+
+# ADVANCED MCQ MANAGEMENT SYSTEM + UTSHO SYSTEM 3.0
+
+IMPORTANT
+
+This update focuses ONLY on:
+
+1. MCQ Management System
+2. Source-Based Question System (Utsho)
+
+Do NOT modify any other feature.
+
+Do NOT redesign existing UI.
+
+Do NOT remove any existing functionality.
+
+Only improve and expand the systems described below.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1
+ADVANCED MCQ MANAGEMENT SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CURRENT ISSUE
+
+The delete system is too basic.
+
+As the database grows, finding and managing questions becomes difficult.
+
+A professional question management system is required.
+
+━━━━━━━━━━━━━━━━━━
+
+NEW REQUIREMENT
+
+Every MCQ must have a permanent identity.
+
+Example:
+
+Physics
+Chapter 2
+Question #001
+
+Physics
+Chapter 2
+Question #002
+
+Physics
+Chapter 2
+Question #003
+
+These IDs never change.
+
+Even if questions are shuffled during practice.
+
+━━━━━━━━━━━━━━━━━━
+
+ADMIN TOOLS
+
+Every question should have:
+
+Edit
+
+Delete
+
+Disable
+
+Restore
+
+Move
+
+Duplicate Check
+
+━━━━━━━━━━━━━━━━━━
+
+DELETE SYSTEM
+
+Instead of instantly deleting:
+
+Move question to:
+
+Recycle Bin
+
+Trash
+
+Deleted Questions
+
+━━━━━━━━━━━━━━━━━━
+
+FLOW
+
+Delete Question
+
+↓
+
+Move To Trash
+
+↓
+
+Store for 30 days
+
+↓
+
+Permanent Delete
+
+This prevents accidental deletion.
+
+━━━━━━━━━━━━━━━━━━
+
+RESTORE SYSTEM
+
+Admin can:
+
+Restore deleted MCQs
+
+Restore entire chapters
+
+Restore entire subjects
+
+━━━━━━━━━━━━━━━━━━
+
+ADVANCED SEARCH
+
+Admin should be able to search by:
+
+Question ID
+
+Subject
+
+Chapter
+
+Keyword
+
+Board
+
+Year
+
+School
+
+College
+
+Difficulty
+
+Question Type
+
+━━━━━━━━━━━━━━━━━━
+
+BULK OPERATIONS
+
+Select Multiple Questions
+
+↓
+
+Delete Selected
+
+Move Selected
+
+Export Selected
+
+Restore Selected
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2
+SMART ERROR REPORT SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+While practicing:
+
+If admin notices a problem:
+
+Wrong answer
+
+Wrong formatting
+
+Wrong LaTeX
+
+Duplicate question
+
+Incomplete question
+
+━━━━━━━━━━━━━━━━━━
+
+Admin can click:
+
+Report Problem
+
+━━━━━━━━━━━━━━━━━━
+
+System automatically stores:
+
+Question ID
+
+Subject
+
+Chapter
+
+Reason
+
+Date
+
+This helps maintain database quality.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3
+UTSHO SYSTEM 3.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The Utsho section must become one of the strongest features of QOVO.
+
+No fake categories.
+
+No placeholder content.
+
+Everything must come from actual database data.
+
+━━━━━━━━━━━━━━━━━━
+
+AUTOMATIC SOURCE DETECTION
+
+When a question is added:
+
+AI automatically detects:
+
+Board Name
+
+Year
+
+School Name
+
+College Name
+
+Exam Type
+
+Question Type
+
+Source Category
+
+━━━━━━━━━━━━━━━━━━
+
+SOURCE CATEGORIES
+
+SSC Board
+
+School Test
+
+College Test
+
+Model Test
+
+Admission Test
+
+Question Bank
+
+Teacher Collection
+
+Custom Collection
+
+━━━━━━━━━━━━━━━━━━
+
+AI automatically places questions into the correct source category.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4
+REAL-TIME SOURCE COUNTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every source must display real counts.
+
+Example:
+
+SSC Board (1,245)
+
+School Test (832)
+
+College Test (521)
+
+Model Test (674)
+
+These numbers must update automatically.
+
+Never use static numbers.
+
+Never use fake values.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5
+ADVANCED SOURCE NAVIGATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FLOW
+
+User Clicks:
+
+SSC Board
+
+↓
+
+Show Subjects
+
+Physics (245)
+
+Chemistry (312)
+
+Biology (198)
+
+Higher Math (421)
+
+↓
+
+Click Subject
+
+↓
+
+Show Chapters
+
+Chapter 1 (42)
+
+Chapter 2 (35)
+
+Chapter 3 (61)
+
+↓
+
+Click Chapter
+
+↓
+
+Show Questions
+
+━━━━━━━━━━━━━━━━━━
+
+QUESTION LIST VIEW
+
+Each question card should show:
+
+Question Number
+
+Board
+
+Year
+
+Chapter
+
+Question Type
+
+Difficulty
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6
+BOARD EXPLORER SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create a new feature:
+
+Board Explorer
+
+Users can browse:
+
+Dhaka Board
+
+Rajshahi Board
+
+Chattogram Board
+
+Cumilla Board
+
+Barishal Board
+
+Jashore Board
+
+Dinajpur Board
+
+Mymensingh Board
+
+Sylhet Board
+
+Madrasah Board
+
+Technical Board
+
+━━━━━━━━━━━━━━━━━━
+
+After selecting a board:
+
+Show available years.
+
+Example:
+
+Dhaka Board
+
+↓
+
+2025
+
+2024
+
+2023
+
+2022
+
+↓
+
+Show subjects.
+
+↓
+
+Show chapters.
+
+↓
+
+Show questions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7
+SOURCE INSIGHT SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For every source show:
+
+Total Questions
+
+Total Subjects
+
+Total Chapters
+
+Most Practiced Subject
+
+Most Difficult Subject
+
+Recently Added Questions
+
+━━━━━━━━━━━━━━━━━━
+
+Example:
+
+Dhaka Board
+
+Questions: 452
+
+Subjects: 12
+
+Chapters: 96
+
+Most Practiced: Physics
+
+Most Difficult: Chemistry
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8
+DATA INTEGRITY RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Do NOT:
+
+Change existing subjects
+
+Change existing chapters
+
+Change practice system
+
+Change model test system
+
+Change user data
+
+━━━━━━━━━━━━━━━━━━
+
+Only add:
+
+Advanced MCQ Management
+
+Recycle Bin
+
+Restore System
+
+Bulk Operations
+
+Smart Error Reports
+
+Utsho System 3.0
+
+Board Explorer
+
+Source Analytics
+
+Real-Time Counts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL OBJECTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The MCQ database should feel like a professional examination database.
+
+The Utsho section should become a powerful question discovery system.
+
+Students should be able to find any question quickly.
+
+Admins should be able to manage thousands of questions efficiently.
+
+Everything must be:
+
+Fast
+
+Reliable
+
+Database Driven
+
+Real
+
+Scalable
+
+Professional

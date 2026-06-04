@@ -21,6 +21,8 @@ import {
   BookOpen,
   Zap,
   Trash2,
+  Flag,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -82,6 +84,13 @@ export default function MultiChapterPractice() {
   const chapterIds = useChapterIds();
   const adminMode = useMemo(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1", []);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [reportOpen,    setReportOpen]    = useState(false);
+  const [reportReason,  setReportReason]  = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportBusy,    setReportBusy]    = useState(false);
+  const [reportDone,    setReportDone]    = useState(false);
+  const REPORT_REASONS = ["ভুল উত্তর", "ভুল LaTeX/সূত্র", "বানান ভুল", "অপূর্ণ প্রশ্ন", "ডুপ্লিকেট", "ভুল ব্যাখ্যা", "অন্যান্য"];
+
   const handleDelete = async (id: number) => {
     try {
       await fetch(`/api/questions/${id}`, { method: "DELETE" });
@@ -339,15 +348,25 @@ export default function MultiChapterPractice() {
                   <Lightbulb className={cn("w-3.5 h-3.5", hintRevealed && "fill-current")} />
                   {hintRevealed ? "সংকেত দেখানো হয়েছে" : "সংকেত"}
                 </button>
+                {adminMode && !reportDone && (
+                  <button type="button" onClick={() => { setReportOpen((p) => !p); setDeleteConfirmId(null); }}
+                    className={cn("flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-all",
+                      reportOpen ? "bg-orange-200 text-orange-700" : "bg-orange-50 hover:bg-orange-100 text-orange-600")}>
+                    <Flag className="w-3 h-3" /> রিপোর্ট
+                  </button>
+                )}
+                {adminMode && reportDone && (
+                  <span className="text-xs text-muted-foreground px-2 py-1">রিপোর্ট হয়েছে</span>
+                )}
                 {adminMode && deleteConfirmId !== current.base.id && (
-                  <button type="button" onClick={() => setDeleteConfirmId(current.base.id)}
+                  <button type="button" onClick={() => { setDeleteConfirmId(current.base.id); setReportOpen(false); }}
                     className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all">
-                    <Trash2 className="w-3 h-3" /> মুছুন
+                    <Trash2 className="w-3 h-3" /> ট্র্যাশ
                   </button>
                 )}
                 {adminMode && deleteConfirmId === current.base.id && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-destructive font-medium">মুছবেন?</span>
+                    <span className="text-xs text-destructive font-medium">ট্র্যাশে?</span>
                     <button type="button" onClick={() => handleDelete(current.base.id)}
                       className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white font-semibold">হ্যাঁ</button>
                     <button type="button" onClick={() => setDeleteConfirmId(null)}
@@ -355,6 +374,46 @@ export default function MultiChapterPractice() {
                   </div>
                 )}
               </div>
+              {/* Report dialog */}
+              <AnimatePresence>
+                {adminMode && reportOpen && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                    <div className="mt-2 p-3 rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 space-y-2">
+                      <p className="text-xs font-semibold text-orange-700 dark:text-orange-300">সমস্যার কারণ বেছে নিন:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {REPORT_REASONS.map((r) => (
+                          <button key={r} type="button" onClick={() => setReportReason(r)}
+                            className={cn("text-xs px-2 py-1 rounded-lg border transition-colors",
+                              reportReason === r ? "bg-orange-500 text-white border-orange-500" : "border-border text-muted-foreground hover:border-orange-400")}>
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                      <input value={reportDetails} onChange={(e) => setReportDetails(e.target.value)}
+                        placeholder="বিস্তারিত (ঐচ্ছিক)"
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={async () => {
+                          if (!reportReason || !current) return;
+                          setReportBusy(true);
+                          await fetch(`/api/questions/${current.base.id}/report`, {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ reason: reportReason, details: reportDetails || null }),
+                          }).catch(() => {});
+                          setReportBusy(false); setReportOpen(false); setReportDone(true);
+                          setReportReason(""); setReportDetails("");
+                          setTimeout(() => setReportDone(false), 4000);
+                        }} disabled={!reportReason || reportBusy}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-orange-500 text-white font-semibold disabled:opacity-50 flex items-center gap-1">
+                          {reportBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Flag className="w-3 h-3" />} জমা
+                        </button>
+                        <button type="button" onClick={() => setReportOpen(false)}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-muted text-foreground">বাতিল</button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <h2 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
                 <MathText>{current.base.questionText}</MathText>
               </h2>
