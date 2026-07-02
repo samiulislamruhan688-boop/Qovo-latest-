@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, questions, userAnswers, userStats } from "@workspace/db";
 import {
@@ -8,6 +8,18 @@ import {
   SubmitPracticeAnswerResponse,
 } from "@workspace/api-zod";
 import { ensureUserStats, touchActivity } from "../lib/userStats";
+
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const token = req.headers["x-admin-token"] as string | undefined;
+  const pin   = process.env.ADMIN_PIN;
+  if (!pin) { res.status(500).json({ error: "Admin PIN not configured" }); return; }
+  if (!token) { res.status(403).json({ error: "Admin access required" }); return; }
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf8");
+    if (decoded !== `admin:${pin}`) { res.status(403).json({ error: "Invalid admin token" }); return; }
+  } catch { res.status(403).json({ error: "Invalid admin token" }); return; }
+  next();
+}
 
 const router: IRouter = Router();
 
@@ -71,14 +83,14 @@ router.post("/practice/submit", async (req, res): Promise<void> => {
   );
 });
 
-// Soft delete (move to trash) — kept for backward-compat with old clients
-router.delete("/questions/:id", async (req, res): Promise<void> => {
+// Soft delete (move to trash) — admin only
+router.delete("/questions/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   const updated = await db
     .update(questions)
     .set({ deletedAt: new Date() })
-    .where(eq(questions.id, id) && isNull(questions.deletedAt))
+    .where(and(eq(questions.id, id), isNull(questions.deletedAt)))
     .returning({ id: questions.id });
   if (!updated.length) { res.status(404).json({ error: "Question not found" }); return; }
   res.json({ trashed: true, id });

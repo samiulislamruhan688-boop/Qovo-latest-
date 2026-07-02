@@ -16,7 +16,9 @@ import {
   Copy,
   Check,
   Sparkles,
+  Shield,
 } from "lucide-react";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SAMPLE_CODE = `@subject: পদার্থবিজ্ঞান
@@ -61,6 +63,19 @@ export default function ImportPage() {
   const queryClient = useQueryClient();
   const { data: stats } = useGetQuestionStats();
   const importMutation = useImportQuestions();
+
+  const isAdmin = (() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } })();
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-5xl mx-auto flex flex-col items-center justify-center py-24 text-center space-y-4">
+        <Shield className="w-14 h-14 text-muted-foreground opacity-30" />
+        <h1 className="text-xl font-bold text-foreground">অ্যাডমিন প্রবেশ দেও</h1>
+        <p className="text-sm text-muted-foreground max-w-sm">প্রশ্ন যোগ করতে অ্যাডমিন PIN দিয়ে প্রবেশ করুন। প্রোফাইল পেজে অ্যাডমিন প্যানেল বিকল্প থেকে PIN লিখুন।</p>
+        <Link href="/profile" className="mt-2 text-sm font-semibold text-primary hover:underline">প্রোফাইল পেজে যান</Link>
+      </div>
+    );
+  }
 
   function handleSubmit() {
     if (!code.trim()) return;

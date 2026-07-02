@@ -34,7 +34,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/profile",     label: "প্রোফাইল",      icon: UserCircle2 },
     { href: "/source",      label: "উৎস",           icon: Database },
     { href: "/admin",       label: "অ্যাডমিন",       icon: ShieldCheck, adminOnly: true },
-    { href: "/import",      label: "প্রশ্ন যোগ",    icon: PlusSquare },
+    { href: "/import",      label: "প্রশ্ন যোগ",    icon: PlusSquare,   adminOnly: true },
   ];
 
   const isAdmin = (() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } })();

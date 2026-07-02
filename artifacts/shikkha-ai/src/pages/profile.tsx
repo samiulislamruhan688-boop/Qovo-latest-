@@ -511,7 +511,8 @@ export default function ProfilePage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Add Question Section ── */}
+      {/* ── Add Question Section (Admin Only) ── */}
+      {pinActive && (
       <div className="rounded-3xl border border-border overflow-hidden shadow-sm">
         <div className="p-5 border-b border-border flex items-center gap-3" style={{ background: "var(--qovo-gradient-soft)" }}>
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "var(--qovo-gradient)" }}>
@@ -602,6 +603,8 @@ export default function ProfilePage() {
           </p>
         </div>
       </div>
+      )}
+
     </div>
   );
 }

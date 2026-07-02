@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, subjects, chapters, questions } from "@workspace/db";
 import {
@@ -9,6 +9,18 @@ import {
 import { parseQuestionCode, type ParsedQuestion } from "../lib/parseQuestionCode";
 
 const router: IRouter = Router();
+
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const token = req.headers["x-admin-token"] as string | undefined;
+  const pin   = process.env.ADMIN_PIN;
+  if (!pin) { res.status(500).json({ error: "Admin PIN not configured" }); return; }
+  if (!token) { res.status(403).json({ error: "Admin access required" }); return; }
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf8");
+    if (decoded !== `admin:${pin}`) { res.status(403).json({ error: "Invalid admin token" }); return; }
+  } catch { res.status(403).json({ error: "Invalid admin token" }); return; }
+  next();
+}
 
 router.get("/questions/stats", async (_req, res): Promise<void> => {
   const [{ q }] = await db
@@ -41,7 +53,7 @@ router.get("/questions/stats", async (_req, res): Promise<void> => {
   );
 });
 
-router.post("/questions/import", async (req, res): Promise<void> => {
+router.post("/questions/import", requireAdmin, async (req, res): Promise<void> => {
   const parsed = ImportQuestionsBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });

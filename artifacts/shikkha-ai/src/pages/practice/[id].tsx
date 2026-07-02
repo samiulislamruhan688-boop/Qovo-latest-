@@ -138,7 +138,8 @@ export default function Practice() {
 
   const handleDelete = async (id: number) => {
     try {
-      await fetch(`/api/questions/${id}`, { method: "DELETE" });
+      const token = (() => { try { return sessionStorage.getItem("qovo-admin-token") ?? ""; } catch { return ""; } })();
+      await fetch(`/api/questions/${id}`, { method: "DELETE", headers: { "x-admin-token": token } });
       setDeleteConfirmId(null);
       window.location.reload();
     } catch { setDeleteConfirmId(null); }
