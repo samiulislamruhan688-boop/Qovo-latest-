@@ -54,6 +54,9 @@ function diffColor(d: string) {
     : "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300";
 }
 
+function adminToken() { try { return sessionStorage.getItem("qovo-admin-token") ?? ""; } catch { return ""; } }
+function adminHdr() { return { "x-admin-token": adminToken() }; }
+
 // ── Trash Tab ─────────────────────────────────────────────────────────────────
 function TrashTab() {
   const qc = useQueryClient();
@@ -66,13 +69,13 @@ function TrashTab() {
   });
 
   const restore = async (id: number) => {
-    await fetch(`/api/questions/${id}/restore`, { method: "PATCH" });
+    await fetch(`/api/questions/${id}/restore`, { method: "PATCH", headers: adminHdr() });
     qc.invalidateQueries({ queryKey: ["admin-trash"] });
     setSelected((p) => { const n = new Set(p); n.delete(id); return n; });
   };
 
   const permDelete = async (id: number) => {
-    await fetch(`/api/questions/${id}/permanent`, { method: "DELETE" });
+    await fetch(`/api/questions/${id}/permanent`, { method: "DELETE", headers: adminHdr() });
     qc.invalidateQueries({ queryKey: ["admin-trash"] });
     setConfirmPerm(null);
     setSelected((p) => { const n = new Set(p); n.delete(id); return n; });
@@ -82,7 +85,7 @@ function TrashTab() {
     const ids = Array.from(selected);
     await fetch("/api/questions/bulk-restore", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...adminHdr() },
       body: JSON.stringify({ ids }),
     });
     qc.invalidateQueries({ queryKey: ["admin-trash"] });
@@ -91,7 +94,7 @@ function TrashTab() {
 
   const bulkDelete = async () => {
     const ids = Array.from(selected);
-    await Promise.all(ids.map((id) => fetch(`/api/questions/${id}/permanent`, { method: "DELETE" })));
+    await Promise.all(ids.map((id) => fetch(`/api/questions/${id}/permanent`, { method: "DELETE", headers: adminHdr() })));
     qc.invalidateQueries({ queryKey: ["admin-trash"] });
     setSelected(new Set());
   };
@@ -220,7 +223,7 @@ function SearchTab() {
   const doSearch = useCallback(() => { setSearched(true); refetch(); }, [refetch]);
 
   const handleTrash = async (id: number) => {
-    await fetch(`/api/questions/${id}/trash`, { method: "PATCH" });
+    await fetch(`/api/questions/${id}/trash`, { method: "PATCH", headers: adminHdr() });
     setTrashedIds((p) => new Set([...p, id]));
     setTrashConfirm(null);
     qc.invalidateQueries({ queryKey: ["admin-trash"] });
@@ -316,7 +319,7 @@ function ReportsTab() {
   });
 
   const dismiss = async (id: number) => {
-    await fetch(`/api/admin/reports/${id}`, { method: "DELETE" }).catch(() => {});
+    await fetch(`/api/admin/reports/${id}`, { method: "DELETE", headers: adminHdr() }).catch(() => {});
     qc.invalidateQueries({ queryKey: ["admin-reports"] });
   };
 
@@ -362,7 +365,7 @@ function ReportsTab() {
 
 // ── Main Admin Page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const adminMode = typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1";
+  const adminMode = (() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } })();
   const [tab, setTab] = useState<Tab>("trash");
 
   if (!adminMode) return (

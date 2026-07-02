@@ -35,7 +35,7 @@ function diffBadge(d: string) {
 // ── Question List (shared by both tabs) ───────────────────────────────────────
 function QuestionList({ questions: qs }: { questions: QuestionRow[] }) {
   const qc = useQueryClient();
-  const adminMode = typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1";
+  const adminMode = (() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } })();
   const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(new Set());
   const [deletedIds,      setDeletedIds]      = useState<Set<number>>(new Set());
   const [deleteConfirm,   setDeleteConfirm]   = useState<number | null>(null);
@@ -49,7 +49,8 @@ function QuestionList({ questions: qs }: { questions: QuestionRow[] }) {
     setRevealedAnswers((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const handleTrash = async (id: number) => {
-    await fetch(apiUrl(`/questions/${id}/trash`), { method: "PATCH" });
+    const token = (() => { try { return sessionStorage.getItem("qovo-admin-token") ?? ""; } catch { return ""; } })();
+    await fetch(apiUrl(`/questions/${id}/trash`), { method: "PATCH", headers: { "x-admin-token": token } });
     setDeletedIds((p) => new Set([...p, id]));
     setDeleteConfirm(null);
     qc.invalidateQueries({ queryKey: ["admin-trash"] });

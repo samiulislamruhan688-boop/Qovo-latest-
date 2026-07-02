@@ -92,7 +92,7 @@ export default function Practice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions, shuffleSeed]);
 
-  const adminMode = useMemo(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1", []);
+  const adminMode = useMemo(() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } }, []);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [reportOpen,    setReportOpen]    = useState(false);
   const [reportReason,  setReportReason]  = useState("");

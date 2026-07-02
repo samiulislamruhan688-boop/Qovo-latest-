@@ -82,7 +82,7 @@ function useChapterIds(): number[] {
 
 export default function MultiChapterPractice() {
   const chapterIds = useChapterIds();
-  const adminMode = useMemo(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1", []);
+  const adminMode = useMemo(() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } }, []);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [reportOpen,    setReportOpen]    = useState(false);
   const [reportReason,  setReportReason]  = useState("");

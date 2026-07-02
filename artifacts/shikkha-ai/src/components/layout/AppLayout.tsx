@@ -37,7 +37,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/import",      label: "প্রশ্ন যোগ",    icon: PlusSquare },
   ];
 
-  const isAdmin = typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1";
+  const isAdmin = (() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } })();
   const visibleNav = navItems.filter((item) => !("adminOnly" in item && item.adminOnly) || isAdmin);
 
   // Mobile shows first 5 items + profile

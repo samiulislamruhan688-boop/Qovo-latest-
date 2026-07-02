@@ -1,11 +1,35 @@
-import { Router, type IRouter } from "express";
-import { eq, isNull, isNotNull, sql, inArray, and, ilike, or } from "drizzle-orm";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+import { eq, isNull, isNotNull, sql, inArray, and, ilike } from "drizzle-orm";
 import { db, questions, chapters, subjects, errorReports } from "@workspace/db";
 
 const router: IRouter = Router();
 
+// ── Admin token verification middleware ───────────────────────────────────────
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const token = req.headers["x-admin-token"] as string | undefined;
+  const pin   = process.env.ADMIN_PIN;
+  if (!pin) { res.status(500).json({ error: "Admin PIN not configured on server" }); return; }
+  if (!token) { res.status(403).json({ error: "Admin access required" }); return; }
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf8");
+    // token = base64("admin:<pin>")
+    if (decoded !== `admin:${pin}`) { res.status(403).json({ error: "Invalid admin token" }); return; }
+  } catch { res.status(403).json({ error: "Invalid admin token" }); return; }
+  next();
+}
+
+// ── PIN verification ──────────────────────────────────────────────────────────
+router.post("/admin/verify-pin", async (req, res): Promise<void> => {
+  const pin = String(req.body?.pin ?? "").trim();
+  const correctPin = process.env.ADMIN_PIN;
+  if (!correctPin) { res.status(500).json({ error: "Admin PIN not configured" }); return; }
+  if (pin !== correctPin) { res.status(403).json({ error: "ভুল PIN" }); return; }
+  const token = Buffer.from(`admin:${correctPin}`).toString("base64");
+  res.json({ ok: true, token });
+});
+
 // ── Soft delete (move to trash) ──────────────────────────────────────────────
-router.patch("/questions/:id/trash", async (req, res): Promise<void> => {
+router.patch("/questions/:id/trash", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   const updated = await db
@@ -17,8 +41,8 @@ router.patch("/questions/:id/trash", async (req, res): Promise<void> => {
   res.json({ trashed: true, id });
 });
 
-// ── Bulk soft delete ─────────────────────────────────────────────────────────
-router.post("/questions/bulk-trash", async (req, res): Promise<void> => {
+// ── Bulk soft delete ──────────────────────────────────────────────────────────
+router.post("/questions/bulk-trash", requireAdmin, async (req, res): Promise<void> => {
   const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
   if (!ids.length) { res.status(400).json({ error: "ids required" }); return; }
   await db
@@ -28,8 +52,8 @@ router.post("/questions/bulk-trash", async (req, res): Promise<void> => {
   res.json({ trashed: true, count: ids.length });
 });
 
-// ── Restore from trash ───────────────────────────────────────────────────────
-router.patch("/questions/:id/restore", async (req, res): Promise<void> => {
+// ── Restore from trash ────────────────────────────────────────────────────────
+router.patch("/questions/:id/restore", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   const updated = await db
@@ -41,8 +65,8 @@ router.patch("/questions/:id/restore", async (req, res): Promise<void> => {
   res.json({ restored: true, id });
 });
 
-// ── Bulk restore ─────────────────────────────────────────────────────────────
-router.post("/questions/bulk-restore", async (req, res): Promise<void> => {
+// ── Bulk restore ──────────────────────────────────────────────────────────────
+router.post("/questions/bulk-restore", requireAdmin, async (req, res): Promise<void> => {
   const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
   if (!ids.length) { res.status(400).json({ error: "ids required" }); return; }
   await db
@@ -53,7 +77,7 @@ router.post("/questions/bulk-restore", async (req, res): Promise<void> => {
 });
 
 // ── Permanent delete (only from trash) ───────────────────────────────────────
-router.delete("/questions/:id/permanent", async (req, res): Promise<void> => {
+router.delete("/questions/:id/permanent", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   const deleted = await db
@@ -64,8 +88,8 @@ router.delete("/questions/:id/permanent", async (req, res): Promise<void> => {
   res.json({ deleted: true, id });
 });
 
-// ── Purge (auto-delete questions in trash > 30 days) ─────────────────────────
-router.delete("/admin/trash/purge", async (_req, res): Promise<void> => {
+// ── Purge questions in trash > 30 days ───────────────────────────────────────
+router.delete("/admin/trash/purge", requireAdmin, async (_req, res): Promise<void> => {
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const purged = await db
     .delete(questions)
@@ -74,7 +98,7 @@ router.delete("/admin/trash/purge", async (_req, res): Promise<void> => {
   res.json({ purged: purged.length });
 });
 
-// ── Trash list ────────────────────────────────────────────────────────────────
+// ── Trash list (read — no auth needed, admin UI guards this) ─────────────────
 router.get("/admin/trash", async (_req, res): Promise<void> => {
   const rows = await db
     .select({
@@ -101,23 +125,19 @@ router.get("/admin/trash", async (_req, res): Promise<void> => {
   res.json(rows);
 });
 
-// ── Advanced search ───────────────────────────────────────────────────────────
+// ── Advanced search (read — no auth needed) ───────────────────────────────────
 router.get("/admin/search", async (req, res): Promise<void> => {
-  const keyword  = String(req.query.keyword  ?? "").trim();
+  const keyword   = String(req.query.keyword   ?? "").trim();
   const subjectId = Number(req.query.subjectId) || null;
-  const chapterId = Number(req.query.chapterId) || null;
   const difficulty = String(req.query.difficulty ?? "").trim() || null;
   const year      = Number(req.query.year)       || null;
   const source    = String(req.query.source ?? "").trim() || null;
 
   const conditions = [isNull(questions.deletedAt)];
-  if (keyword) {
-    conditions.push(ilike(questions.questionText, `%${keyword}%`));
-  }
+  if (keyword)    conditions.push(ilike(questions.questionText, `%${keyword}%`));
   if (difficulty) conditions.push(eq(questions.difficulty, difficulty));
   if (year)       conditions.push(eq(questions.year, year));
   if (source)     conditions.push(eq(questions.source, source));
-  if (chapterId)  conditions.push(eq(questions.chapterId, chapterId));
 
   const rows = await db
     .select({
@@ -145,7 +165,7 @@ router.get("/admin/search", async (req, res): Promise<void> => {
   res.json(rows);
 });
 
-// ── Error report: create ──────────────────────────────────────────────────────
+// ── Error report: create (no auth needed — users can report) ─────────────────
 router.post("/questions/:id/report", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
@@ -159,7 +179,7 @@ router.post("/questions/:id/report", async (req, res): Promise<void> => {
   res.json(report);
 });
 
-// ── Error report: list ────────────────────────────────────────────────────────
+// ── Error report: list (read) ─────────────────────────────────────────────────
 router.get("/admin/reports", async (_req, res): Promise<void> => {
   const rows = await db
     .select({
@@ -181,12 +201,15 @@ router.get("/admin/reports", async (_req, res): Promise<void> => {
   res.json(rows);
 });
 
-// ── Error report: dismiss (delete) ───────────────────────────────────────────
-router.delete("/admin/reports/:id", async (req, res): Promise<void> => {
+// ── Error report: dismiss ─────────────────────────────────────────────────────
+router.delete("/admin/reports/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   await db.delete(errorReports).where(eq(errorReports.id, id));
   res.json({ dismissed: true, id });
 });
+
+// Backward-compat: DELETE /api/questions/:id (soft delete via practice page)
+// This route is already in practice.ts — admin.ts does NOT duplicate it.
 
 export default router;

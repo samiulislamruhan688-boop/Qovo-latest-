@@ -15,7 +15,7 @@ import {
   BookOpen, PlusSquare, Sparkles, Copy, CheckCircle2, AlertCircle,
   Layers, FileText, GraduationCap, Hash, Calendar, ChevronDown,
   MapPin, School, FlaskConical, BookMarked, Landmark, Briefcase,
-  Save,
+  Save, Shield, ShieldCheck, ShieldOff, KeyRound, Loader2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import qLogoSrc from "/qovo-q.png";
@@ -101,12 +101,33 @@ export default function ProfilePage() {
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [savedToast,      setSavedToast]      = useState(false);
 
-  // Admin mode
-  const [adminMode, setAdminMode] = useState(() => typeof localStorage !== "undefined" && localStorage.getItem("qovo-admin-mode") === "1");
-  const toggleAdminMode = () => {
-    const next = !adminMode;
-    setAdminMode(next);
-    typeof localStorage !== "undefined" && localStorage.setItem("qovo-admin-mode", next ? "1" : "0");
+  // Admin PIN
+  const [pinActive,  setPinActive]  = useState(() => { try { return !!sessionStorage.getItem("qovo-admin-token"); } catch { return false; } });
+  const [pinOpen,    setPinOpen]    = useState(false);
+  const [pinValue,   setPinValue]   = useState("");
+  const [pinError,   setPinError]   = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+
+  const handleVerifyPin = async () => {
+    if (pinValue.length !== 6) { setPinError("৬ সংখ্যার PIN দিন"); return; }
+    setPinLoading(true); setPinError("");
+    try {
+      const res = await fetch("/api/admin/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pinValue }),
+      });
+      if (!res.ok) { const d = await res.json(); setPinError(d.error ?? "ভুল PIN"); setPinLoading(false); return; }
+      const { token } = await res.json();
+      sessionStorage.setItem("qovo-admin-token", token);
+      setPinActive(true); setPinOpen(false); setPinValue(""); setPinError("");
+    } catch { setPinError("সংযোগ ত্রুটি"); }
+    setPinLoading(false);
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem("qovo-admin-token");
+    setPinActive(false); setPinOpen(false); setPinValue(""); setPinError("");
   };
 
   // Import
@@ -424,22 +445,70 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* ── Admin Mode Toggle ── */}
-      <div className="flex items-center justify-between p-4 rounded-2xl border border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${adminMode ? "bg-destructive/15" : "bg-muted"}`}>
-            <Brain className={`w-4.5 h-4.5 ${adminMode ? "text-destructive" : "text-muted-foreground"}`} />
+      {/* ── Admin Access ── */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${pinActive ? "bg-emerald-500/15" : "bg-muted"}`}>
+              {pinActive
+                ? <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" />
+                : <Shield className="w-4.5 h-4.5 text-muted-foreground" />}
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground">অ্যাডমিন প্যানেল</div>
+              <div className="text-xs text-muted-foreground">
+                {pinActive ? "সক্রিয় — প্রশ্ন মুছতে ও পরিচালনা করতে পারবেন" : "PIN দিয়ে প্রবেশ করুন"}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold text-foreground">অ্যাডমিন মোড</div>
-            <div className="text-xs text-muted-foreground">{adminMode ? "সক্রিয় — প্রশ্ন মুছতে পারবেন" : "নিষ্ক্রিয়"}</div>
-          </div>
+          {pinActive ? (
+            <button type="button" onClick={handleAdminLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-border bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
+              <ShieldOff className="w-3.5 h-3.5" /> লগআউট
+            </button>
+          ) : (
+            <button type="button" onClick={() => { setPinOpen((v) => !v); setPinValue(""); setPinError(""); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-primary/40 text-primary hover:bg-primary/10 transition-colors">
+              <KeyRound className="w-3.5 h-3.5" /> PIN লিখুন
+            </button>
+          )}
         </div>
-        <button type="button" onClick={toggleAdminMode}
-          className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none ${adminMode ? "bg-destructive" : "bg-muted-foreground/30"}`}
-          aria-label="অ্যাডমিন মোড টগল">
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${adminMode ? "translate-x-5" : "translate-x-0"}`} />
-        </button>
+
+        <AnimatePresence>
+          {pinOpen && !pinActive && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-t border-border"
+            >
+              <div className="p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pinValue}
+                    onChange={(e) => { setPinValue(e.target.value.replace(/\D/g, "").slice(0, 6)); setPinError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleVerifyPin(); if (e.key === "Escape") setPinOpen(false); }}
+                    placeholder="• • • • • •"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-card/70 text-sm font-mono text-center tracking-[0.4em] outline-none focus:border-primary transition-colors"
+                  />
+                  <button type="button" onClick={handleVerifyPin} disabled={pinLoading || pinValue.length !== 6}
+                    className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-opacity flex items-center gap-1.5"
+                    style={{ background: "var(--qovo-gradient)" }}>
+                    {pinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    প্রবেশ
+                  </button>
+                </div>
+                {pinError && (
+                  <p className="text-xs text-destructive font-semibold text-center">{pinError}</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Add Question Section ── */}
