@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, questions, userAnswers, userStats } from "@workspace/db";
 import {
   ListQuestionsByChapterParams,
@@ -20,7 +20,7 @@ router.get("/chapters/:id/questions", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(questions)
-    .where(eq(questions.chapterId, params.data.id) && isNull(questions.deletedAt))
+    .where(and(eq(questions.chapterId, params.data.id), isNull(questions.deletedAt)))
     .orderBy(questions.id);
 
   res.json(ListQuestionsByChapterResponse.parse(rows));
