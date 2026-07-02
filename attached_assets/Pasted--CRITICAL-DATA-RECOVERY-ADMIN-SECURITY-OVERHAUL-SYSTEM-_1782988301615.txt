@@ -1,0 +1,48 @@
+# 🚨 CRITICAL DATA RECOVERY & ADMIN SECURITY OVERHAUL 🚨
+
+**SYSTEM DIRECTIVE:** You are a senior React/Node.js backend architect and database administrator. Your goal is to fix a critical database bug, recover data, and implement a secure Admin Mode.
+
+**🛑 CRITICAL RULES (STRICTLY ENFORCED):**
+- DO NOT rewrite or restructure the entire application.
+- DO NOT change the existing general UI/UX (except adding the admin lock in Profile and hiding add/delete buttons).
+- DO NOT drop, recreate, or alter existing database tables.
+- ALWAYS use strict `eq()` filtering in Drizzle ORM to target specific rows.
+- DO NOT hardcode sensitive PINs in the frontend client code. Use Environment Variables.
+
+---
+
+### Phase 1: Data Recovery & Deletion Bug Fix
+**The Bug:** Currently, clicking "Delete" on a single MCQ deletes ALL MCQs across all subjects and chapters. This is due to a missing or empty `.where()` clause in the Drizzle ORM delete mutation.
+**The Fix:**
+1. **Restore Data:** Provide a Drizzle ORM script/query to restore all mistakenly soft-deleted data by updating the `deletedAt` field to `null` for affected questions, chapters, and subjects.
+2. **Fix Delete Logic:** Refactor the existing delete functions in the codebase provided below. Ensure they strictly use `.where(eq(table.id, specific_id))`.
+
+---
+
+### Phase 2: Secure Admin Mode (6-Digit PIN)
+**The Requirement:** The "Add MCQ", "Delete Subject", "Delete Chapter", and "Delete Question" buttons/features MUST be completely hidden and protected from normal users.
+1. **Admin Lock in Profile:** Create an "Admin Panel" section in the user Profile component with a 6-digit PIN input field.
+2. **The PIN System (Secure):** 
+   - I want the PIN to be `428739`. 
+   - Instruct me on how to set this securely in Replit Secrets / `.env` (e.g., `ADMIN_PIN=428739`).
+   - The backend must verify the entered PIN against this environment variable.
+3. **Session State:** Store the authenticated admin status securely (using React Context, Zustand, or session state) so the user stays an admin during their active session.
+4. **Conditional Rendering & Route Protection:** 
+   - **Frontend:** If `isAdmin` is false, the Add/Delete buttons MUST NOT render in the DOM.
+   - **Backend:** Protect all POST/DELETE API routes. If a non-admin attempts to trigger these routes, return a `403 Forbidden` error.
+
+---
+
+### 🛠️ CODEBASE CONTEXT 
+*(I am providing my schema, delete logic, and profile component below so you know exactly which files to edit)*
+
+[PASTE YOUR CODE HERE - Schema, Delete Route/Function, and Profile Component code]
+
+---
+
+**📋 YOUR ACTION PLAN (Reply step-by-step):**
+- **STEP 1:** Show the corrected Drizzle ORM `.update()` or `.delete()` logic to fix the mass-delete bug in the provided code.
+- **STEP 2:** Provide the exact execution code/script to restore the soft-deleted MCQs (`deletedAt = null`).
+- **STEP 3:** Show the frontend state logic for PIN verification and the backend logic for `403 Forbidden` API protection.
+
+**WAIT FOR MY CONFIRMATION BEFORE APPLYING ANY CODE CHANGES. Do not apply changes until I say "Perfect, go ahead".**
