@@ -358,6 +358,16 @@ export async function customFetch<T = unknown>(
     }
   }
 
+  // Attach admin token from sessionStorage when available
+  if (!headers.has("x-admin-token")) {
+    try {
+      const adminToken = sessionStorage.getItem("qovo-admin-token");
+      if (adminToken) headers.set("x-admin-token", adminToken);
+    } catch {
+      /* ignore sessionStorage errors (SSR / private mode) */
+    }
+  }
+
   const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers });
