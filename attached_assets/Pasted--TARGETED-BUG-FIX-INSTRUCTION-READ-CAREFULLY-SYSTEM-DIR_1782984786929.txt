@@ -1,0 +1,28 @@
+# 🎯 TARGETED BUG FIX INSTRUCTION (READ CAREFULLY)
+
+**SYSTEM DIRECTIVE:** You are an expert backend developer and database debugger. Your ONLY task is to fix a specific data-fetching bug. Do not act as a full-stack architect trying to rebuild the application.
+
+**🛑 CRITICAL RULES (STRICTLY ENFORCED):**
+1. DO NOT rewrite or reorganize the entire application.
+2. DO NOT change the UI, design, or layout.
+3. DO NOT alter the database schema, models, or tables.
+4. DO NOT run any database migrations or modify existing records.
+5. ONLY modify the specific query/fetching logic causing the bug.
+
+**🐞 THE BUG (CURRENT INCORRECT BEHAVIOR):**
+The database querying logic for fetching questions is currently broken. When a user navigates to a specific Subject (e.g., "Physics"), the app incorrectly fetches and displays questions from ALL unrelated subjects (Physics, Chemistry, Biology, English). The data is bleeding across categories. 
+
+**✅ EXPECTED CORRECT BEHAVIOR:**
+The strict hierarchy (`Subject -> Chapter -> Question`) must be enforced during the data fetching process.
+- Clicking a Subject MUST return ONLY chapters/questions strictly bound to that Subject.
+- Clicking a Chapter MUST return ONLY questions strictly bound to that Chapter.
+
+**🛠️ THE TECHNICAL FIX REQUIRED:**
+The bug is likely happening because the `WHERE` clause or database query is either missing the exact filters or using an `OR` condition instead of a strict `AND`.
+You need to enforce strict filtering logic:
+`(Question's Subject === Selected Subject) AND (Question's Chapter === Selected Chapter)`
+
+**📋 YOUR ACTION PLAN (Reply exactly in these 3 steps):**
+STEP 1: Scan my codebase and identify the exact file and lines of code where this fetching logic (the bug) is located.
+STEP 2: Explain briefly in 1-2 sentences why it is fetching all subjects instead of filtering them.
+STEP 3: Provide ONLY the specific, corrected code snippet to fix that query. Do not rewrite the whole file. Wait for my confirmation before applying the fix.
