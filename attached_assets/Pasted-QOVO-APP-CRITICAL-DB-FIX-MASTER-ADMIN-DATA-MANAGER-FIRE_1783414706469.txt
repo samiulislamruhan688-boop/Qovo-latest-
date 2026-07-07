@@ -1,0 +1,53 @@
+QOVO APP - CRITICAL DB FIX & MASTER ADMIN DATA MANAGER (FIRESTORE)
+
+DO NOT REBUILD FROM SCRATCH. Modify the existing application.
+Preserve the existing Admin PIN/Password authentication system exactly as it is.
+CRITICAL DB CONTEXT: The app uses Firebase Firestore (NoSQL). DO NOT use any SQL logic or syntax. 
+
+Right now, there is a CRITICAL BUG in the Admin Mode: When deleting a single MCQ, all MCQs are getting deleted. We need to fix this Firestore deletion logic immediately and build a Master CRUD Admin Panel.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 1: CRITICAL BUG FIX (FIRESTORE MCQ DELETION)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Current Issue: The current deletion logic is wiping the entire collection/database instead of a single document.
+Required Fix:
+1. Ensure the API/Function strictly targets the specific document ID in Firestore for MCQ deletion (e.g., `deleteDoc(doc(db, "...", questionId))`).
+2. If no `questionId` is provided, the function MUST abort with a 400 Bad Request.
+3. Ensure the frontend passes the correct unique `id` when the delete button is clicked.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 2: MASTER ADMIN DATA MANAGER (FULL CRUD)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Build a unified "Data Manager" UI inside the Admin section to fully control Subjects, Chapters, and MCQs.
+
+1. Manage Subjects (Master Control):
+   - Edit Subject: Allow admin to edit the Subject Name and related info (Description/Tags).
+   - Delete Subject (CRITICAL FIRESTORE LOGIC): Add a Delete button. Since Firestore doesn't auto-delete subcollections, the backend MUST perform a "Cascading Delete". If a Subject is deleted -> Query and delete ALL its Chapters -> Query and delete ALL MCQs linked to those Chapters -> Finally, delete the Subject document.
+
+2. Manage Chapters:
+   - Edit Chapter: Allow admin to edit the Chapter Name and related info.
+   - Delete Chapter (CASCADING DELETE): When a Chapter is deleted, the backend MUST query and delete ALL MCQs linked to this specific chapter before deleting the chapter document itself.
+
+3. Manage MCQs (Advanced Editing):
+   - Edit MCQ: Add an "Edit" (✏️) button next to every MCQ. Open a premium Glassmorphism Modal where Admin can edit: Question text, 4 Options, Correct Answer, Explanation, and MCQ Type/Badge.
+   - Delete MCQ: Add a "Delete" (🗑️) button next to the edit button (Using the fixed logic from Phase 1).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 3: INSTANT UI UPDATES (STATE MANAGEMENT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QOVO is built for extreme speed. The UI MUST update instantly.
+1. When an item (Subject, Chapter, or MCQ) is deleted, use React state filtering (e.g., `setItems(prev => prev.filter(i => i.id !== deletedId))`) to remove the item from the screen instantly without fetching the DB again.
+2. When an item is edited and saved, update the specific item in the local state immediately.
+3. NO `window.location.reload()` allowed under any circumstances.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 4: SAFE DELETION UX & TOASTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deleting a Subject or Chapter is a massive destructive action. 
+1. Strict Confirmation Modal: Before ANY deletion, a beautiful Glassmorphism confirmation modal MUST appear.
+   - For Subject: "WARNING: Deleting this Subject will delete ALL its Chapters and MCQs. Are you sure?"
+   - For Chapter: "WARNING: Deleting this Chapter will delete ALL its MCQs. Are you sure?"
+   - Buttons: [ Cancel ] (Safe) / [ Delete Permanently ] (Danger - Red).
+2. Toast Notifications: Show clear success/error toast messages (e.g., "✅ Subject Updated", "🗑️ Subject & All Related Data Deleted Successfully").
+
+Keep the UI design strictly consistent with QOVO's premium, modern, glassmorphism vibe. Ensure the `x-admin-token` validation protects all these new API routes.

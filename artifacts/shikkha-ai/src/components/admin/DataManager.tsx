@@ -202,6 +202,8 @@ export default function DataManager() {
   const [editingSub, setEditingSub] = useState<number | null>(null);
   const [editSubName, setEditSubName] = useState("");
 
+  const [confirmDelSub, setConfirmDelSub] = useState<number | null>(null);
+
   const saveSubject = async (id: number) => {
     const name = editSubName.trim();
     if (!name) return;
@@ -216,6 +218,24 @@ export default function DataManager() {
     } else {
       toast({ title: "ত্রুটি", description: "বিষয় আপডেট ব্যর্থ হয়েছে।", variant: "destructive" });
     }
+  };
+
+  const deleteSubject = async (id: number) => {
+    const res = await fetch(`/api/subjects/${id}`, { method: "DELETE", headers: adminHdr() });
+    if (res.ok) {
+      const j = await res.json().catch(() => ({} as { chaptersDeleted?: number; questionsDeleted?: number }));
+      toast({
+        title: "বিষয় মুছে ফেলা হয়েছে",
+        description: `${j.chaptersDeleted ?? 0}টি অধ্যায় ও ${j.questionsDeleted ?? 0}টি প্রশ্নসহ বিষয় স্থায়ীভাবে মুছে ফেলা হয়েছে।`,
+        variant: "destructive",
+      });
+      qc.invalidateQueries({ queryKey: ["/api/subjects"] });
+      qc.invalidateQueries({ queryKey: ["all-chapters"] });
+      qc.invalidateQueries({ queryKey: ["/api/chapters"] });
+    } else {
+      toast({ title: "ত্রুটি", description: "বিষয় মুছতে ব্যর্থ হয়েছে।", variant: "destructive" });
+    }
+    setConfirmDelSub(null);
   };
 
   /* Chapters */
@@ -364,6 +384,10 @@ export default function DataManager() {
                           className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
+                        <button onClick={() => setConfirmDelSub(s.id)}
+                          className="w-7 h-7 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </>
                     )}
                   </div>
@@ -488,10 +512,18 @@ export default function DataManager() {
 
       {/* Confirm modals */}
       <ConfirmModal
+        open={!!confirmDelSub}
+        title="সতর্কতা: বিষয় মুছুন"
+        message="এই বিষয় মুছে ফেললে এর সকল অধ্যায় এবং সকল MCQ স্থায়ীভাবে মুছে যাবে। এই কাজ ফেরত নেওয়া যাবে না।"
+        dangerText="স্থায়ীভাবে মুছুন"
+        onConfirm={() => confirmDelSub && deleteSubject(confirmDelSub)}
+        onCancel={() => setConfirmDelSub(null)}
+      />
+      <ConfirmModal
         open={!!confirmDelChap}
-        title="অধ্যায় মুছুন"
-        message="আপনি কি এই অধ্যায় মুছে ফেলতে চান? এই অধ্যায়ের সব প্রশ্ন স্থায়ীভাবে মুছে যাবে। এই কাজ ফেরত নেওয়া যাবে না।"
-        dangerText="মুছুন"
+        title="সতর্কতা: অধ্যায় মুছুন"
+        message="এই অধ্যায় মুছে ফেললে এর সকল MCQ স্থায়ীভাবে মুছে যাবে। এই কাজ ফেরত নেওয়া যাবে না।"
+        dangerText="স্থায়ীভাবে মুছুন"
         onConfirm={() => confirmDelChap && deleteChapter(confirmDelChap)}
         onCancel={() => setConfirmDelChap(null)}
       />

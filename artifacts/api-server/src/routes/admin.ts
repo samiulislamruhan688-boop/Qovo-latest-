@@ -220,6 +220,23 @@ router.put("/subjects/:id", requireAdmin, async (req, res): Promise<void> => {
   res.json({ updated: true, id });
 });
 
+// Subject cascade delete: MCQs -> Chapters -> Subject
+router.delete("/subjects/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+  const subjectChapters = await db.select({ id: chapters.id }).from(chapters).where(eq(chapters.subjectId, id));
+  let totalQuestions = 0;
+  if (subjectChapters.length) {
+    const chapterIds = subjectChapters.map((c) => c.id);
+    const deletedQ = await db.delete(questions).where(inArray(questions.chapterId, chapterIds)).returning({ id: questions.id });
+    totalQuestions = deletedQ.length;
+    await db.delete(chapters).where(inArray(chapters.id, chapterIds));
+  }
+  const deletedSubject = await db.delete(subjects).where(eq(subjects.id, id)).returning({ id: subjects.id });
+  if (!deletedSubject.length) { res.status(404).json({ error: "Subject not found" }); return; }
+  res.json({ deleted: true, id, chaptersDeleted: subjectChapters.length, questionsDeleted: totalQuestions });
+});
+
 // Chapter edit name
 router.put("/chapters/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
