@@ -1,0 +1,96 @@
+QOVO APP – PROFESSIONAL AUTHENTICATION & ACCOUNT SYSTEM (V5)
+
+## IMPORTANT CONTEXT & STRICT RULES
+This application already exists and uses Firebase (Firestore) for database operations. 
+DO NOT rebuild the application from scratch. 
+DO NOT remove any existing features. 
+DO NOT break the current database or the recently updated Admin Mode.
+Upgrade the current system into a production-level account system using **Firebase Authentication**. Everything must be scalable, secure, and future-proof.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PRIMARY GOAL
+Every student must have ONE permanent QOVO cloud account linked to their Firebase Auth UID.
+No matter which device they use, if they uninstall, or clear app data — upon signing in again, EVERYTHING must be restored automatically from Firestore. The app must behave exactly like Google Classroom, Duolingo, or Notion.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PROFESSIONAL SIGN IN METHODS (FIREBASE AUTH)
+Implement Firebase Authentication for the following methods:
+✅ Google Sign-In (Official OAuth popup/redirect)
+✅ Apple Sign-In (Official Apple provider)
+✅ Bangladeshi Phone Number (+880) Sign-In (Firebase Phone Auth)
+
+Future-ready architecture for: Facebook, GitHub, Email+Password.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PERMANENT USER ID, ANONYMOUS AUTH & CLOUD MIGRATION
+1. Each account must strictly use the `Firebase Auth UID` as the primary key.
+2. The UID must NEVER change.
+3. CRITICAL GUEST FLOW: Use **Firebase Anonymous Auth** for guest users practicing offline or before signing up. When they eventually sign in/sign up using Google, Apple, or Phone, use Firebase's native `linkWithCredential` to seamlessly merge the anonymous session and its data into their new permanent cloud profile without losing any progress.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CLOUD PROFILE SYSTEM (FIRESTORE)
+Create a `users` collection in Firestore. Document ID = UID.
+Store the following fields:
+- Profile Picture, Display Name, Username, Phone/Email
+- Academic Info: School, College, District, SSC Batch, Group
+- App Data: Study Statistics, Achievements, Bookmarks, Saved Questions, Wrong Questions, Study History, Model Test History, Daily Streak, XP, Level.
+Everything must automatically and instantly sync with Firestore.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AUTO RESTORE & MULTI-DEVICE SUPPORT
+When a user signs in:
+1. Fetch the user document from the `users` collection.
+2. Populate the global state/context with their Profile, MCQ Progress, Model Test Results, Bookmarks, Settings, Theme, etc.
+3. Implement real-time listeners (`onSnapshot`) so if a user uses a Tablet and a Phone simultaneously, changes sync automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PROFESSIONAL PHONE LOGIN (BANGLADESH)
+For Bangladeshi users (+880):
+- Beautiful Phone Number input UI with Bangladesh flag & code.
+- Firebase OTP Verification with **Invisible reCAPTCHA**. 
+- CRITICAL UI RULE: Tie the invisible `RecaptchaVerifier` directly to the 'Send OTP' button. It MUST NOT break QOVO's clean, premium UI with ugly visual puzzle boxes unless absolutely required by Google's anti-abuse engine.
+- Auto OTP detection (if supported by device/API).
+- Countdown Timer for "Resend OTP" (e.g., 60 seconds).
+- Error handling: Invalid OTP, Rate Limiting, Network Error.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ACCOUNT LINKING (FIREBASE MULTI-PROVIDER)
+Allow users to connect multiple login methods to one Firebase account.
+Example: A user logs in with Google. Later, they link their Phone Number from settings. Both methods should point to the SAME UID using `linkWithCredential`. Never create duplicate accounts for the same user.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# SESSION MANAGEMENT & ROUTING
+- Use `onAuthStateChanged` to automatically maintain sessions.
+- Valid Token -> Open Home Screen immediately (Skip Login).
+- Provide a smooth Splash Screen while checking auth state.
+- Only ask for login when the user explicitly logs out or the token expires.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# SECURITY & FIRESTORE RULES
+Implement production-level security:
+1. Users must only be able to read/write their OWN data (Rule: `request.auth.uid == resource.data.userId`).
+2. Admin Mode MUST remain protected via the existing Admin PIN/Token system AND Firebase Custom Claims (if applicable).
+3. Secure API Requests and local storage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ACCOUNT SETTINGS & PROFILE MANAGEMENT
+Create a dedicated, premium "Account Settings" UI containing:
+- Edit Profile (Upload photo to Firebase Storage, change Username, Batch, Group).
+- Linked Accounts Management (Connect Google/Phone).
+- Logout Button (CRITICAL: Logging out only clears local session `signOut()`, DO NOT delete cloud data).
+- Delete Account (Permanently delete Firebase Auth user and Firestore user document).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# OFFLINE BEHAVIOR (FIRESTORE PERSISTENCE)
+- Enable Firebase Firestore Offline Persistence (`enableIndexedDbPersistence` or equivalent in v9/v10).
+- If internet is unavailable, allow offline MCQ practice using cached data.
+- Queue progress locally. Automatically sync to cloud when internet returns. Never lose user progress.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# USER EXPERIENCE & UI DESIGN
+- The auth flow must feel like a premium application.
+- Use QOVO's existing Glassmorphism, smooth animations, and premium colors.
+- Show professional toast notifications ("Welcome back!", "OTP Sent Successfully").
+- Smooth transitions between login steps (Phone Input -> OTP Input).
+
+Prioritize: Speed, Reliability, Cloud Sync, Permanent Identity, Offline Safety, and Production Best Practices. Implement this flawlessly without breaking any existing QOVO UI or the Admin Panel.
