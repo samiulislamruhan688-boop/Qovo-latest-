@@ -4,15 +4,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, RotateCcw, Search, ShieldCheck,
   X, Check, Loader2, Flag,
-  Database,
+  Database, BookOpen,
 } from "lucide-react";
+import DataManager from "@/components/admin/DataManager";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MathText } from "@/components/MathText";
 
 type SubjectOption = { id: number; nameBn: string };
 
-type Tab = "trash" | "search" | "reports";
+type Tab = "trash" | "search" | "reports" | "manage";
 
 type TrashItem = {
   id: number; questionText: string; options: string[];
@@ -382,6 +383,7 @@ export default function AdminPage() {
     { id: "trash",   label: "ট্র্যাশ",      icon: <Trash2 className="w-4 h-4" /> },
     { id: "search",  label: "অনুসন্ধান",    icon: <Search className="w-4 h-4" /> },
     { id: "reports", label: "রিপোর্ট",       icon: <Flag className="w-4 h-4" /> },
+    { id: "manage",  label: "ব্যবস্থাপনা", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
   return (
@@ -393,7 +395,7 @@ export default function AdminPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">অ্যাডমিন প্যানেল</h1>
-          <p className="text-xs text-muted-foreground">প্রশ্ন ব্যবস্থাপনা ও ট্র্যাশ</p>
+          <p className="text-xs text-muted-foreground">প্রশ্ন ব্যবস্থাপনা, ট্র্যাশ ও ডেটা এডিট</p>
         </div>
       </div>
 
@@ -415,6 +417,7 @@ export default function AdminPage() {
           {tab === "trash"   && <TrashTab />}
           {tab === "search"  && <SearchTab />}
           {tab === "reports" && <ReportsTab />}
+          {tab === "manage"  && <DataManager />}
         </motion.div>
       </AnimatePresence>
     </div>

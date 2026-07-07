@@ -55,7 +55,20 @@ router.get("/subjects/:id/chapters", async (req, res): Promise<void> => {
   res.json(ListChaptersBySubjectResponse.parse(rows));
 });
 
-// GET /api/subjects/:id/questions?limit=25  — random questions from a subject
+// ── All chapters (for admin data manager) ───────────────────────────────────────────────
+router.get("/chapters", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      id: chapters.id,
+      subjectId: chapters.subjectId,
+      nameBn: chapters.nameBn,
+      orderIndex: chapters.orderIndex,
+    })
+    .from(chapters)
+    .orderBy(chapters.id);
+  res.json(rows);
+});
+
 router.get("/subjects/:id/questions", async (req, res): Promise<void> => {
   const subjectId = Number(req.params.id);
   if (!subjectId) { res.status(400).json({ error: "invalid id" }); return; }

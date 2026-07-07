@@ -96,7 +96,7 @@ export default function MultiChapterPractice() {
       const token = (() => { try { return sessionStorage.getItem("qovo-admin-token") ?? ""; } catch { return ""; } })();
       await fetch(`/api/questions/${id}`, { method: "DELETE", headers: { "x-admin-token": token } });
       setDeleteConfirmId(null);
-      window.location.reload();
+      setAllQuestions((prev) => prev.filter((q) => q.id !== id));
     } catch { setDeleteConfirmId(null); }
   };
   const [allQuestions, setAllQuestions] = useState<QuestionLike[]>([]);

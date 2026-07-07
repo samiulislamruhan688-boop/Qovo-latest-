@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useListQuestionsByChapter, useSubmitPracticeAnswer } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,6 +76,7 @@ function detectCategory(text: string): { label: string; color: string } {
 }
 
 export default function Practice() {
+  const qc = useQueryClient();
   const [, params] = useRoute("/practice/:chapterId");
   const chapterId = Number(params?.chapterId);
 
@@ -141,7 +143,7 @@ export default function Practice() {
       const token = (() => { try { return sessionStorage.getItem("qovo-admin-token") ?? ""; } catch { return ""; } })();
       await fetch(`/api/questions/${id}`, { method: "DELETE", headers: { "x-admin-token": token } });
       setDeleteConfirmId(null);
-      window.location.reload();
+      qc.invalidateQueries({ queryKey: ["/api/chapters", chapterId, "questions"] });
     } catch { setDeleteConfirmId(null); }
   };
 

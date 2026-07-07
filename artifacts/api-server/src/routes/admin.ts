@@ -209,7 +209,62 @@ router.delete("/admin/reports/:id", requireAdmin, async (req, res): Promise<void
   res.json({ dismissed: true, id });
 });
 
-// Backward-compat: DELETE /api/questions/:id (soft delete via practice page)
-// This route is already in practice.ts — admin.ts does NOT duplicate it.
+// Subject edit name
+router.put("/subjects/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+  const nameBn = String(req.body?.nameBn ?? "").trim();
+  if (!nameBn) { res.status(400).json({ error: "nameBn required" }); return; }
+  const updated = await db.update(subjects).set({ nameBn }).where(eq(subjects.id, id)).returning({ id: subjects.id });
+  if (!updated.length) { res.status(404).json({ error: "Subject not found" }); return; }
+  res.json({ updated: true, id });
+});
+
+// Chapter edit name
+router.put("/chapters/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+  const nameBn = String(req.body?.nameBn ?? "").trim();
+  if (!nameBn) { res.status(400).json({ error: "nameBn required" }); return; }
+  const updated = await db.update(chapters).set({ nameBn }).where(eq(chapters.id, id)).returning({ id: chapters.id });
+  if (!updated.length) { res.status(404).json({ error: "Chapter not found" }); return; }
+  res.json({ updated: true, id });
+});
+
+// Chapter delete cascade all MCQs first then chapter
+router.delete("/chapters/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+  // First delete all questions in this chapter (explicit batch for safety)
+  const deletedQuestions = await db.delete(questions).where(eq(questions.chapterId, id)).returning({ id: questions.id });
+  // Then delete the chapter
+  const deletedChapter = await db.delete(chapters).where(eq(chapters.id, id)).returning({ id: chapters.id });
+  if (!deletedChapter.length) { res.status(404).json({ error: "Chapter not found" }); return; }
+  res.json({ deleted: true, id, questionsDeleted: deletedQuestions.length });
+});
+
+// Question full edit
+router.put("/questions/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "invalid id" }); return; }
+
+  const body = req.body ?? {};
+  const updates: Record<string, unknown> = {};
+
+  if (body.questionText !== undefined) updates.questionText = String(body.questionText).trim();
+  if (Array.isArray(body.options) && body.options.length === 4) updates.options = body.options.map(String);
+  if (body.correctIndex !== undefined) updates.correctIndex = Number(body.correctIndex);
+  if (body.explanation !== undefined) updates.explanation = String(body.explanation).trim();
+  if (body.difficulty !== undefined) updates.difficulty = String(body.difficulty);
+  if (body.source !== undefined) updates.source = body.source ? String(body.source) : null;
+  if (body.year !== undefined) updates.year = body.year ? Number(body.year) : null;
+  if (body.chapterId !== undefined) updates.chapterId = Number(body.chapterId);
+
+  if (Object.keys(updates).length === 0) { res.status(400).json({ error: "no fields to update" }); return; }
+
+  const updated = await db.update(questions).set(updates).where(eq(questions.id, id)).returning({ id: questions.id });
+  if (!updated.length) { res.status(404).json({ error: "Question not found" }); return; }
+  res.json({ updated: true, id });
+});
 
 export default router;
