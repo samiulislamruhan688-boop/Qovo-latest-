@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { sql } from "drizzle-orm";
-import { db, userAnswers, testAttempts, userStats } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { db, userAnswers, testAttempts, users } from "@workspace/db";
 import { GetLeaderboardResponse } from "@workspace/api-zod";
 import { ensureUserStats } from "../lib/userStats";
+import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -19,22 +20,28 @@ const fakeStudents = [
   { name: "জারিন তাসনিম", color: "#A855F7", points: 1520, accuracy: 75.8, testsCompleted: 15 },
 ];
 
-router.get("/leaderboard", async (_req, res): Promise<void> => {
-  const stats = await ensureUserStats();
+router.get("/leaderboard", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
+  const stats = await ensureUserStats(userId);
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
   const [agg] = await db
     .select({
       total: sql<number>`COUNT(*)::int`,
       correct: sql<number>`COUNT(*) FILTER (WHERE ${userAnswers.isCorrect} = true)::int`,
     })
-    .from(userAnswers);
+    .from(userAnswers)
+    .where(eq(userAnswers.userId, userId));
   const [tCount] = await db
     .select({ c: sql<number>`COUNT(*)::int` })
-    .from(testAttempts);
+    .from(testAttempts)
+    .where(eq(testAttempts.userId, userId));
 
   const accuracy = (agg?.total ?? 0) > 0 ? ((agg?.correct ?? 0) / (agg?.total ?? 1)) * 100 : 0;
+  const displayName = user?.displayName ?? user?.name ?? "আপনি";
 
   const me = {
-    name: "আপনি",
+    name: displayName,
     avatarColor: "#0EA5E9",
     points: stats.totalPoints,
     accuracy,

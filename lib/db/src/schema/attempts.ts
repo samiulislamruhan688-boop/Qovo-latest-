@@ -1,8 +1,12 @@
 import { integer, pgTable, real, serial, timestamp } from "drizzle-orm/pg-core";
 import { tests } from "./tests";
+import { users } from "./users";
 
 export const testAttempts = pgTable("test_attempts", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   testId: integer("test_id")
     .notNull()
     .references(() => tests.id, { onDelete: "cascade" }),

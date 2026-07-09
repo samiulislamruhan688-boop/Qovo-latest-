@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq, inArray, sql } from "drizzle-orm";
-import { db, tests, questions, testAttempts, userStats } from "@workspace/db";
+import { db, tests, questions, testAttempts } from "@workspace/db";
 import {
   ListTestsResponse,
   GetTestParams,
@@ -10,7 +10,8 @@ import {
   SubmitTestResponse,
   ListRecentAttemptsResponse,
 } from "@workspace/api-zod";
-import { ensureUserStats, touchActivity } from "../lib/userStats";
+import { addPoints, touchActivity } from "../lib/userStats";
+import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -29,7 +30,8 @@ router.get("/tests", async (_req, res): Promise<void> => {
   res.json(ListTestsResponse.parse(out));
 });
 
-router.get("/tests/attempts/recent", async (_req, res): Promise<void> => {
+router.get("/tests/attempts/recent", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const rows = await db
     .select({
       id: testAttempts.id,
@@ -42,6 +44,7 @@ router.get("/tests/attempts/recent", async (_req, res): Promise<void> => {
     })
     .from(testAttempts)
     .innerJoin(tests, eq(tests.id, testAttempts.testId))
+    .where(eq(testAttempts.userId, userId))
     .orderBy(desc(testAttempts.completedAt))
     .limit(10);
 
@@ -64,7 +67,6 @@ router.get("/tests/:id", async (req, res): Promise<void> => {
     .from(questions)
     .where(inArray(questions.id, test.questionIds));
 
-  // preserve order
   const orderMap = new Map(test.questionIds.map((id, i) => [id, i]));
   qs.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
 
@@ -81,7 +83,8 @@ router.get("/tests/:id", async (req, res): Promise<void> => {
   );
 });
 
-router.post("/tests/:id/submit", async (req, res): Promise<void> => {
+router.post("/tests/:id/submit", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const params = SubmitTestParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -118,6 +121,7 @@ router.post("/tests/:id/submit", async (req, res): Promise<void> => {
   const [attempt] = await db
     .insert(testAttempts)
     .values({
+      userId,
       testId: test.id,
       score,
       totalQuestions,
@@ -128,14 +132,9 @@ router.post("/tests/:id/submit", async (req, res): Promise<void> => {
     })
     .returning();
 
-  const stats = await ensureUserStats();
-  await db
-    .update(userStats)
-    .set({ totalPoints: sql`${userStats.totalPoints} + ${score}` })
-    .where(eq(userStats.id, stats.id));
-  await touchActivity();
+  await addPoints(userId, score);
+  await touchActivity(userId);
 
-  // Compute rank: how many attempts have higher score for this test
   const [rankRow] = await db
     .select({ count: sql<number>`COUNT(*)::int` })
     .from(testAttempts)

@@ -17,6 +17,7 @@ import {
   GetActivityFeedResponse,
 } from "@workspace/api-zod";
 import { ensureUserStats } from "../lib/userStats";
+import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -28,17 +29,20 @@ function levelFor(points: number): string {
   return "মাস্টার";
 }
 
-router.get("/progress/summary", async (_req, res): Promise<void> => {
-  const stats = await ensureUserStats();
+router.get("/progress/summary", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
+  const stats = await ensureUserStats(userId);
   const [agg] = await db
     .select({
       total: sql<number>`COUNT(*)::int`,
       correct: sql<number>`COUNT(*) FILTER (WHERE ${userAnswers.isCorrect} = true)::int`,
     })
-    .from(userAnswers);
+    .from(userAnswers)
+    .where(eq(userAnswers.userId, userId));
   const [tCount] = await db
     .select({ c: sql<number>`COUNT(*)::int` })
-    .from(testAttempts);
+    .from(testAttempts)
+    .where(eq(testAttempts.userId, userId));
 
   const accuracy = (agg?.total ?? 0) > 0 ? ((agg?.correct ?? 0) / (agg?.total ?? 1)) * 100 : 0;
 
@@ -56,7 +60,8 @@ router.get("/progress/summary", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/progress/by-subject", async (_req, res): Promise<void> => {
+router.get("/progress/by-subject", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const subjectsList = await db.select().from(subjects).orderBy(subjects.id);
   const result = [];
   for (const s of subjectsList) {
@@ -93,9 +98,9 @@ router.get("/progress/by-subject", async (_req, res): Promise<void> => {
   res.json(GetProgressBySubjectResponse.parse(result));
 });
 
-router.get("/progress/streak", async (_req, res): Promise<void> => {
-  const stats = await ensureUserStats();
-  // Build last 7 days activity counts
+router.get("/progress/streak", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
+  const stats = await ensureUserStats(userId);
   const days: { day: string; count: number }[] = [];
   const dayLabelsBn = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"];
   for (let i = 6; i >= 0; i--) {
@@ -106,7 +111,9 @@ router.get("/progress/streak", async (_req, res): Promise<void> => {
     const [row] = await db
       .select({ c: sql<number>`COUNT(*)::int` })
       .from(userAnswers)
-      .where(sql`${userAnswers.answeredAt} >= ${start} AND ${userAnswers.answeredAt} < ${end}`);
+      .where(
+        sql`${userAnswers.userId} = ${userId} AND ${userAnswers.answeredAt} >= ${start} AND ${userAnswers.answeredAt} < ${end}`,
+      );
     days.push({
       day: dayLabelsBn[d.getUTCDay()] ?? "",
       count: row?.c ?? 0,
@@ -123,8 +130,8 @@ router.get("/progress/streak", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/progress/activity", async (_req, res): Promise<void> => {
-  // Mix recent answers and test attempts
+router.get("/progress/activity", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const recentAnswers = await db
     .select({
       id: userAnswers.id,
@@ -138,6 +145,7 @@ router.get("/progress/activity", async (_req, res): Promise<void> => {
     .innerJoin(questions, eq(questions.id, userAnswers.questionId))
     .innerJoin(chapters, eq(chapters.id, questions.chapterId))
     .innerJoin(subjects, eq(subjects.id, chapters.subjectId))
+    .where(eq(userAnswers.userId, userId))
     .orderBy(desc(userAnswers.answeredAt))
     .limit(10);
 
@@ -151,6 +159,7 @@ router.get("/progress/activity", async (_req, res): Promise<void> => {
     })
     .from(testAttempts)
     .innerJoin(tests, eq(tests.id, testAttempts.testId))
+    .where(eq(testAttempts.userId, userId))
     .orderBy(desc(testAttempts.completedAt))
     .limit(5);
 

@@ -13,6 +13,7 @@ import {
   GetAnthropicConversationResponse,
   ListAnthropicMessagesResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -31,18 +32,27 @@ const SYSTEM_PROMPT = `তুমি "Qovo টিউটর" — বাংলা�
 - জটিল উত্তরে structured layout: heading → key points (bullets) → example → summary
 - উত্তর হোক সংক্ষিপ্ত কিন্তু পূর্ণাঙ্গ — অপ্রয়োজনীয় ভূমিকা এড়াও`;
 
-router.get("/anthropic/conversations", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(conversations).orderBy(asc(conversations.id));
+router.get("/anthropic/conversations", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
+  const rows = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.userId, userId))
+    .orderBy(asc(conversations.id));
   res.json(ListAnthropicConversationsResponse.parse(rows));
 });
 
-router.post("/anthropic/conversations", async (req, res): Promise<void> => {
+router.post("/anthropic/conversations", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const parsed = CreateAnthropicConversationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [created] = await db.insert(conversations).values({ title: parsed.data.title }).returning();
+  const [created] = await db
+    .insert(conversations)
+    .values({ userId, title: parsed.data.title })
+    .returning();
   res.status(201).json({
     id: created.id,
     title: created.title,
@@ -50,14 +60,18 @@ router.post("/anthropic/conversations", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/anthropic/conversations/:id", async (req, res): Promise<void> => {
+router.get("/anthropic/conversations/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const params = GetAnthropicConversationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, params.data.id));
-  if (!conv) {
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, params.data.id));
+  if (!conv || conv.userId !== userId) {
     res.status(404).json({ error: "Conversation not found" });
     return;
   }
@@ -76,27 +90,38 @@ router.get("/anthropic/conversations/:id", async (req, res): Promise<void> => {
   );
 });
 
-router.delete("/anthropic/conversations/:id", async (req, res): Promise<void> => {
+router.delete("/anthropic/conversations/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const params = DeleteAnthropicConversationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [deleted] = await db
-    .delete(conversations)
-    .where(eq(conversations.id, params.data.id))
-    .returning();
-  if (!deleted) {
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, params.data.id));
+  if (!conv || conv.userId !== userId) {
     res.status(404).json({ error: "Conversation not found" });
     return;
   }
+  await db.delete(conversations).where(eq(conversations.id, conv.id));
   res.sendStatus(204);
 });
 
-router.get("/anthropic/conversations/:id/messages", async (req, res): Promise<void> => {
+router.get("/anthropic/conversations/:id/messages", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const params = ListAnthropicMessagesParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, params.data.id));
+  if (!conv || conv.userId !== userId) {
+    res.status(404).json({ error: "Conversation not found" });
     return;
   }
   const msgs = await db
@@ -107,7 +132,8 @@ router.get("/anthropic/conversations/:id/messages", async (req, res): Promise<vo
   res.json(ListAnthropicMessagesResponse.parse(msgs));
 });
 
-router.post("/anthropic/conversations/:id/messages", async (req, res): Promise<void> => {
+router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const params = SendAnthropicMessageParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -119,13 +145,15 @@ router.post("/anthropic/conversations/:id/messages", async (req, res): Promise<v
     return;
   }
 
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, params.data.id));
-  if (!conv) {
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, params.data.id));
+  if (!conv || conv.userId !== userId) {
     res.status(404).json({ error: "Conversation not found" });
     return;
   }
 
-  // Save user message
   await db.insert(messages).values({
     conversationId: conv.id,
     role: "user",

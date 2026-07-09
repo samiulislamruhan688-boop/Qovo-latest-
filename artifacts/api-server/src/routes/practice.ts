@@ -1,13 +1,14 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { and, eq, isNull, sql } from "drizzle-orm";
-import { db, questions, userAnswers, userStats } from "@workspace/db";
+import { and, eq, isNull } from "drizzle-orm";
+import { db, questions, userAnswers } from "@workspace/db";
 import {
   ListQuestionsByChapterParams,
   ListQuestionsByChapterResponse,
   SubmitPracticeAnswerBody,
   SubmitPracticeAnswerResponse,
 } from "@workspace/api-zod";
-import { ensureUserStats, touchActivity } from "../lib/userStats";
+import { addPoints, touchActivity } from "../lib/userStats";
+import { requireAuth } from "../lib/auth";
 
 function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const token = req.headers["x-admin-token"] as string | undefined;
@@ -38,7 +39,8 @@ router.get("/chapters/:id/questions", async (req, res): Promise<void> => {
   res.json(ListQuestionsByChapterResponse.parse(rows));
 });
 
-router.post("/practice/submit", async (req, res): Promise<void> => {
+router.post("/practice/submit", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.session.userId!;
   const parsed = SubmitPracticeAnswerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -58,6 +60,7 @@ router.post("/practice/submit", async (req, res): Promise<void> => {
   const pointsEarned = correct ? (q.difficulty === "hard" ? 15 : q.difficulty === "easy" ? 5 : 10) : 0;
 
   await db.insert(userAnswers).values({
+    userId,
     questionId: q.id,
     selectedIndex: parsed.data.selectedIndex,
     isCorrect: correct,
@@ -65,13 +68,9 @@ router.post("/practice/submit", async (req, res): Promise<void> => {
   });
 
   if (correct) {
-    const stats = await ensureUserStats();
-    await db
-      .update(userStats)
-      .set({ totalPoints: sql`${userStats.totalPoints} + ${pointsEarned}` })
-      .where(eq(userStats.id, stats.id));
+    await addPoints(userId, pointsEarned);
   }
-  await touchActivity();
+  await touchActivity(userId);
 
   res.json(
     SubmitPracticeAnswerResponse.parse({
