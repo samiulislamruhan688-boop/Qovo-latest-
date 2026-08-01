@@ -49,7 +49,9 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "user_sessions",
-      createTableIfMissing: true,
+      // The table is provisioned with the development schema, not at request time.
+      // Runtime DDL makes bundled builds look for connect-pg-simple's table.sql.
+      createTableIfMissing: false,
     }),
     name: "qovo.sid",
     secret: SESSION_SECRET,

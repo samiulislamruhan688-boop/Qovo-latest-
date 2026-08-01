@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   db,
   userAnswers,
@@ -73,7 +73,7 @@ router.get("/progress/by-subject", requireAuth, async (req, res): Promise<void> 
       .from(userAnswers)
       .innerJoin(questions, eq(questions.id, userAnswers.questionId))
       .innerJoin(chapters, eq(chapters.id, questions.chapterId))
-      .where(eq(chapters.subjectId, s.id));
+      .where(and(eq(userAnswers.userId, userId), eq(chapters.subjectId, s.id)));
 
     const [total] = await db
       .select({ t: sql<number>`COUNT(${questions.id})::int` })

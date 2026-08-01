@@ -1,1 +1,2 @@
 - [V4 Admin & Source features](v4-admin-source.md) — soft-delete/trash system, error reports, year explorer, admin panel page; key API patterns and non-obvious decisions.
+- [Multi-user auth and legacy data](multi-user-auth.md) — global curriculum stays shared; private progress is owned per user and legacy rows are preserved.

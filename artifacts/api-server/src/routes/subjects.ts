@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, inArray } from "drizzle-orm";
+import { and, eq, isNull, sql, inArray } from "drizzle-orm";
 import { db, subjects, chapters, questions } from "@workspace/db";
 import {
   ListSubjectsResponse,
@@ -24,7 +24,7 @@ router.get("/subjects", async (_req, res): Promise<void> => {
     })
     .from(subjects)
     .leftJoin(chapters, eq(chapters.subjectId, subjects.id))
-    .leftJoin(questions, eq(questions.chapterId, chapters.id))
+    .leftJoin(questions, and(eq(questions.chapterId, chapters.id), isNull(questions.deletedAt)))
     .groupBy(subjects.id)
     .orderBy(subjects.id);
 
@@ -47,7 +47,7 @@ router.get("/subjects/:id/chapters", async (req, res): Promise<void> => {
       questionCount: sql<number>`COALESCE(COUNT(${questions.id}), 0)::int`,
     })
     .from(chapters)
-    .leftJoin(questions, eq(questions.chapterId, chapters.id))
+    .leftJoin(questions, and(eq(questions.chapterId, chapters.id), isNull(questions.deletedAt)))
     .where(eq(chapters.subjectId, params.data.id))
     .groupBy(chapters.id)
     .orderBy(chapters.orderIndex);
@@ -96,7 +96,7 @@ router.get("/subjects/:id/questions", async (req, res): Promise<void> => {
       chapterId: questions.chapterId,
     })
     .from(questions)
-    .where(inArray(questions.chapterId, chapterIds))
+    .where(and(inArray(questions.chapterId, chapterIds), isNull(questions.deletedAt)))
     .orderBy(sql`RANDOM()`)
     .limit(limit);
 
