@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInCard } from "@/components/auth/SignInCard";
 import {
   useGetProgressSummary,
   useGetStreak,
@@ -74,6 +76,7 @@ Answer: B
 Explain: 36 × (1000/3600) = 10 m/s`;
 
 export default function ProfilePage() {
+  const { user, isLoading: authLoading } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetProgressSummary();
   const { data: streak, isLoading: loadingStreak } = useGetStreak();
   const { data: stats } = useGetQuestionStats();
@@ -189,6 +192,23 @@ export default function ProfilePage() {
   const totalAnswered = summary?.totalCorrect ?? 0;
   const currentGroup = SSC_GROUPS.find((g) => g.value === group) ?? SSC_GROUPS[0];
   const batchLabel = SSC_BATCHES.find((b) => b.value === batch)?.label ?? `SSC ${batch}`;
+
+  // ── Auth gate ────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-5 pb-10">
+        <Skeleton className="h-48 rounded-3xl" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-32 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignInCard message="Please sign in to view your profile and save your progress." />;
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 pb-10">

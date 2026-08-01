@@ -4,6 +4,8 @@ import {
   useListRecentAttempts,
   useGetActivityFeed,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInCard } from "@/components/auth/SignInCard";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,6 +138,7 @@ function BannerSlider() {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetProgressSummary();
   const { data: recentAttempts, isLoading: loadingAttempts } = useListRecentAttempts();
   const { data: activities, isLoading: loadingActivities } = useGetActivityFeed();
@@ -202,15 +205,22 @@ export default function Home() {
         ))}
       </section>
 
-      {/* Stats */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="মোট পয়েন্ট" value={summary?.totalPoints} icon={<Trophy className="w-5 h-5 text-yellow-500" />} loading={loadingSummary} />
-        <StatCard title="সঠিক উত্তর" value={summary?.totalCorrect} icon={<Target className="w-5 h-5 text-emerald-500" />} loading={loadingSummary} />
-        <StatCard title="সঠিকতার হার" value={summary ? `${Math.round(summary.accuracy)}%` : undefined} icon={<Brain className="w-5 h-5 text-primary" />} loading={loadingSummary} />
-        <StatCard title="বর্তমান লেভেল" value={summary?.level} icon={<Flame className="w-5 h-5 text-orange-500" />} loading={loadingSummary} />
-      </section>
+      {/* Stats — gated for authenticated users */}
+      {user ? (
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard title="মোট পয়েন্ট" value={summary?.totalPoints} icon={<Trophy className="w-5 h-5 text-yellow-500" />} loading={loadingSummary} />
+          <StatCard title="সঠিক উত্তর" value={summary?.totalCorrect} icon={<Target className="w-5 h-5 text-emerald-500" />} loading={loadingSummary} />
+          <StatCard title="সঠিকতার হার" value={summary ? `${Math.round(summary.accuracy)}%` : undefined} icon={<Brain className="w-5 h-5 text-primary" />} loading={loadingSummary} />
+          <StatCard title="বর্তমান লেভেল" value={summary?.level} icon={<Flame className="w-5 h-5 text-orange-500" />} loading={loadingSummary} />
+        </section>
+      ) : (
+        <SignInCard
+          message="Please sign in to save your progress, track your performance, and unlock AI analytics."
+          fullPage={false}
+        />
+      )}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {user && <div className="grid md:grid-cols-2 gap-6">
         {/* Recent Activity */}
         <Card className="border-none shadow-md">
           <CardHeader className="pb-3">
@@ -307,7 +317,7 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
     </div>
   );
 }

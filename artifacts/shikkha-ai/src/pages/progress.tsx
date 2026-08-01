@@ -4,11 +4,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target, Flame, Brain } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignInCard } from "@/components/auth/SignInCard";
 
 export default function ProgressPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetProgressSummary();
   const { data: subjectProgress, isLoading: loadingSubjects } = useGetProgressBySubject();
   const { data: streak, isLoading: loadingStreak } = useGetStreak();
+
+  if (authLoading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-8">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-80 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SignInCard message="Please sign in to save your progress, track your performance, and unlock AI analytics." />
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
