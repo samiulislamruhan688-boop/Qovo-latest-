@@ -2,6 +2,16 @@ import katex from "katex";
 
 type Seg = { type: "text" | "display" | "inline"; content: string };
 
+const LATEX_COMMAND_RE =
+  /\\(?:frac|dfrac|tfrac|sqrt|text|mathrm|mathbf|mathbb|left|right|sin|cos|tan|cot|sec|csc|log|ln|lim|sum|prod|pi|theta|alpha|beta|gamma|delta|infty|times|cdot|pm|leq|geq|neq|approx)\b/;
+const BARE_MATH_CHARS_RE = /^[\s\dA-Za-z\\{}_^+\-*/=().,\[\]|]+$/;
+
+function isBareLatex(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || !BARE_MATH_CHARS_RE.test(trimmed)) return false;
+  return LATEX_COMMAND_RE.test(trimmed) || /[{}^_]/.test(trimmed);
+}
+
 function parseMath(text: string): Seg[] {
   const segs: Seg[] = [];
   let i = 0;
@@ -47,6 +57,14 @@ function parseMath(text: string): Seg[] {
     i++;
   }
   flush(text.length);
+
+  // Some imported answer options contain bare LaTeX such as \frac{3}{4}
+  // without math delimiters. Treat only a whole, clearly math-shaped string
+  // as inline math so ordinary prose is left untouched.
+  if (segs.length === 1 && segs[0].type === "text" && isBareLatex(text)) {
+    return [{ type: "inline", content: text.trim() }];
+  }
+
   return segs;
 }
 
