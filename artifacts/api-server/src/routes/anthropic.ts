@@ -16,7 +16,7 @@ import {
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
-const GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-3.6-flash";
 
 let geminiClient: GoogleGenAI | undefined;
 
