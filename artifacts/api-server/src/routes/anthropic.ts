@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, asc } from "drizzle-orm";
 import { db, conversations, messages } from "@workspace/db";
-import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { GoogleGenAI } from "@google/genai";
 import {
   CreateAnthropicConversationBody,
   GetAnthropicConversationParams,
@@ -16,6 +16,33 @@ import {
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
+const GEMINI_MODEL = "gemini-3.8-flash";
+
+let geminiClient: GoogleGenAI | undefined;
+
+function getGeminiClient(): GoogleGenAI | null {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  geminiClient ??= new GoogleGenAI({ apiKey });
+  return geminiClient;
+}
+
+async function getAiProvider() {
+  const gemini = getGeminiClient();
+  if (gemini) return { kind: "gemini" as const, client: gemini };
+
+  if (
+    !process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ||
+    !process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY
+  ) {
+    return null;
+  }
+
+  // Load the Replit-specific client only when Gemini is not configured.
+  // Its module validates the integration env vars during import.
+  const { anthropic } = await import("@workspace/integrations-anthropic-ai");
+  return { kind: "anthropic" as const, client: anthropic };
+}
 
 const SYSTEM_PROMPT = `তুমি "Qovo টিউটর" — বাংলাদেশের SSC শিক্ষার্থীদের একজন বন্ধুসুলভ, প্রাণবন্ত এবং অভিজ্ঞ AI টিউটর। তুমি বাংলায় উত্তর দাও (সংজ্ঞা, সূত্র বা প্রযুক্তিগত শব্দে ইংরেজি ব্যবহার ঠিক আছে)।
 
@@ -154,6 +181,19 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
     return;
   }
 
+  let provider: Awaited<ReturnType<typeof getAiProvider>>;
+  try {
+    provider = await getAiProvider();
+  } catch (err) {
+    req.log.error({ err }, "AI provider initialization failed");
+    res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
+    return;
+  }
+  if (!provider) {
+    res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
+    return;
+  }
+
   await db.insert(messages).values({
     conversationId: conv.id,
     role: "user",
@@ -178,17 +218,36 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
   let fullResponse = "";
 
   try {
-    const stream = anthropic.messages.stream({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8192,
-      system: SYSTEM_PROMPT,
-      messages: chatMessages,
-    });
+    if (provider.kind === "gemini") {
+      const stream = await provider.client.models.generateContentStream({
+        model: GEMINI_MODEL,
+        contents: chatMessages.map((message) => ({
+          role: message.role === "assistant" ? ("model" as const) : ("user" as const),
+          parts: [{ text: message.content }],
+        })),
+        config: { systemInstruction: SYSTEM_PROMPT },
+      });
 
-    for await (const event of stream) {
-      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-        fullResponse += event.delta.text;
-        res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+      for await (const chunk of stream) {
+        const text = chunk.text;
+        if (text) {
+          fullResponse += text;
+          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+    } else {
+      const stream = provider.client.messages.stream({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        system: SYSTEM_PROMPT,
+        messages: chatMessages,
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          fullResponse += event.delta.text;
+          res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+        }
       }
     }
 
@@ -215,14 +274,32 @@ router.post("/chat", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: message }],
-    });
-    const reply =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const provider = await getAiProvider();
+    if (!provider) {
+      res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
+      return;
+    }
+
+    let reply: string;
+    if (provider.kind === "gemini") {
+      const response = await provider.client.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: message,
+        config: { systemInstruction: SYSTEM_PROMPT },
+      });
+      reply = response.text ?? "";
+    } else {
+      const response = await provider.client.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: message }],
+      });
+      reply = response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("");
+    }
     res.json({ reply });
   } catch (err) {
     req.log.error({ err }, "Quick chat failed");

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useGetLeaderboard } from "@workspace/api-client-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import { Trophy, Crown, Medal, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +13,6 @@ function RankIcon({ rank }: { rank: number }) {
 
 export function MiniLeaderboard() {
   const { data: board, isLoading } = useGetLeaderboard();
-  const { user } = useAuth();
 
   const top5 = board?.slice(0, 5) ?? [];
 
@@ -47,14 +45,14 @@ export function MiniLeaderboard() {
         ) : (
           <div className="space-y-2">
             {top5.map((entry, i) => {
-              const isMe = user && entry.userId === user.id;
-              const rank = i + 1;
+              const isMe = entry.isCurrentUser;
+              const rank = entry.rank;
               const rankColors: Record<number, string> = { 1: "#fbbf24", 2: "#94a3b8", 3: "#d97706" };
               const rc = rankColors[rank];
 
               return (
                 <motion.div
-                  key={entry.userId}
+                  key={`${entry.rank}-${entry.name}`}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
@@ -79,14 +77,9 @@ export function MiniLeaderboard() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-extrabold text-white overflow-hidden"
                     style={isMe
                       ? { background: "var(--qovo-gradient)" }
-                      : rc
-                        ? { background: `${rc}30`, border: `1px solid ${rc}40` }
-                        : { background: "rgba(255,255,255,0.08)" }
+                      : { background: entry.avatarColor, border: `1px solid ${entry.avatarColor}80` }
                     }>
-                    {entry.avatarUrl
-                      ? <img src={entry.avatarUrl} alt={entry.name} className="w-full h-full object-cover" />
-                      : (entry.name?.[0] ?? "?").toUpperCase()
-                    }
+                    {(entry.name?.[0] ?? "?").toUpperCase()}
                   </div>
 
                   {/* Name */}
@@ -94,13 +87,15 @@ export function MiniLeaderboard() {
                     <p className={`text-sm font-bold truncate ${isMe ? "text-primary" : "text-white/80"}`}>
                       {entry.name ?? "Unknown"} {isMe && <span className="text-[10px] text-primary/60">(আপনি)</span>}
                     </p>
-                    <p className="text-[10px] text-white/30">{entry.level}</p>
+                    <p className="text-[10px] text-white/30">
+                      {Math.round(entry.accuracy)}% সঠিক · {entry.testsCompleted} টেস্ট
+                    </p>
                   </div>
 
                   {/* Score */}
                   <div className="text-right flex-shrink-0">
                     <p className={`text-sm font-extrabold ${rank === 1 ? "text-yellow-400" : rank === 2 ? "text-slate-300" : rank === 3 ? "text-amber-500" : "text-white/60"}`}>
-                      {entry.totalPoints?.toLocaleString("bn-BD")}
+                      {entry.points.toLocaleString("bn-BD")}
                     </p>
                     <p className="text-[10px] text-white/25">XP</p>
                   </div>
