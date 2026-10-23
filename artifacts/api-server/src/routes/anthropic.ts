@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, asc } from "drizzle-orm";
 import { db, conversations, messages } from "@workspace/db";
 import { GoogleGenAI } from "@google/genai";
@@ -43,6 +43,8 @@ async function getAiProvider() {
   const { anthropic } = await import("@workspace/integrations-anthropic-ai");
   return { kind: "anthropic" as const, client: anthropic };
 }
+
+export type AiProviderResolver = () => ReturnType<typeof getAiProvider>;
 
 const SYSTEM_PROMPT = `তুমি "Qovo টিউটর" — বাংলাদেশের SSC শিক্ষার্থীদের একজন বন্ধুসুলভ, প্রাণবন্ত এবং অভিজ্ঞ AI টিউটর। তুমি বাংলায় উত্তর দাও (সংজ্ঞা, সূত্র বা প্রযুক্তিগত শব্দে ইংরেজি ব্যবহার ঠিক আছে)।
 
@@ -159,162 +161,181 @@ router.get("/anthropic/conversations/:id/messages", requireAuth, async (req, res
   res.json(ListAnthropicMessagesResponse.parse(msgs));
 });
 
-router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, res): Promise<void> => {
-  const userId = req.session.userId!;
-  const params = SendAnthropicMessageParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-  const parsed = SendAnthropicMessageBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const [conv] = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.id, params.data.id));
-  if (!conv || conv.userId !== userId) {
-    res.status(404).json({ error: "Conversation not found" });
-    return;
-  }
-
-  let provider: Awaited<ReturnType<typeof getAiProvider>>;
-  try {
-    provider = await getAiProvider();
-  } catch (err) {
-    req.log.error({ err }, "AI provider initialization failed");
-    res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
-    return;
-  }
-  if (!provider) {
-    res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
-    return;
-  }
-
-  await db.insert(messages).values({
-    conversationId: conv.id,
-    role: "user",
-    content: parsed.data.content,
-  });
-
-  const history = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.conversationId, conv.id))
-    .orderBy(asc(messages.id));
-
-  const chatMessages = history.map((m) => ({
-    role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
-    content: m.content,
-  }));
-
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  let fullResponse = "";
-
-  try {
-    if (provider.kind === "gemini") {
-      const stream = await provider.client.interactions.create({
-        model: GEMINI_MODEL,
-        input: chatMessages.map((message) => ({
-          type: message.role === "assistant" ? ("model_output" as const) : ("user_input" as const),
-          content: [{ type: "text" as const, text: message.content }],
-        })),
-        system_instruction: SYSTEM_PROMPT,
-        stream: true,
-        store: false,
-      });
-
-      for await (const event of stream) {
-        if (event.event_type === "error") {
-          throw new Error(event.error?.message ?? "Gemini streaming failed");
-        }
-        if (event.event_type === "step.delta" && event.delta.type === "text") {
-          const text = event.delta.text;
-          fullResponse += text;
-          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
-        }
-      }
-    } else {
-      const stream = provider.client.messages.stream({
-        model: "claude-sonnet-4-6",
-        max_tokens: 8192,
-        system: SYSTEM_PROMPT,
-        messages: chatMessages,
-      });
-
-      for await (const event of stream) {
-        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-          fullResponse += event.delta.text;
-          res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
-        }
-      }
+function createConversationMessageHandler(resolveProvider: AiProviderResolver) {
+  return async (req: Request, res: Response): Promise<void> => {
+    const userId = req.session.userId!;
+    const params = SendAnthropicMessageParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = SendAnthropicMessageBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
     }
 
-    await db.insert(messages).values({
-      conversationId: conv.id,
-      role: "assistant",
-      content: fullResponse,
-    });
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, params.data.id));
+    if (!conv || conv.userId !== userId) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
 
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
-  } catch (err) {
-    req.log.error({ err }, "AI streaming failed");
-    res.write(`data: ${JSON.stringify({ error: "AI সেবায় সমস্যা হয়েছে। আবার চেষ্টা করুন।" })}\n\n`);
-    res.end();
-  }
-});
-
-/* ── Quick one-shot chat endpoint (used by test result & subject pages) ── */
-router.post("/chat", async (req, res): Promise<void> => {
-  const { message } = req.body as { message?: string };
-  if (!message || typeof message !== "string") {
-    res.status(400).json({ error: "message required" });
-    return;
-  }
-  try {
-    const provider = await getAiProvider();
+    let provider: Awaited<ReturnType<AiProviderResolver>>;
+    try {
+      provider = await resolveProvider();
+    } catch (err) {
+      req.log.error({ err }, "AI provider initialization failed");
+      res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
+      return;
+    }
     if (!provider) {
       res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
       return;
     }
 
-    let reply: string;
-    if (provider.kind === "gemini") {
-      const response = await provider.client.interactions.create({
-        model: GEMINI_MODEL,
-        input: message,
-        system_instruction: SYSTEM_PROMPT,
-        store: false,
+    await db.insert(messages).values({
+      conversationId: conv.id,
+      role: "user",
+      content: parsed.data.content,
+    });
+
+    const history = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conv.id))
+      .orderBy(asc(messages.id));
+
+    const chatMessages = history.map((m) => ({
+      role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+      content: m.content,
+    }));
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    let fullResponse = "";
+
+    try {
+      if (provider.kind === "gemini") {
+        const stream = await provider.client.interactions.create({
+          model: GEMINI_MODEL,
+          input: chatMessages.map((message) => ({
+            type: message.role === "assistant" ? ("model_output" as const) : ("user_input" as const),
+            content: [{ type: "text" as const, text: message.content }],
+          })),
+          system_instruction: SYSTEM_PROMPT,
+          stream: true,
+          store: false,
+        });
+
+        for await (const event of stream) {
+          if (event.event_type === "error") {
+            throw new Error(event.error?.message ?? "Gemini streaming failed");
+          }
+          if (event.event_type === "step.delta" && event.delta.type === "text") {
+            const text = event.delta.text;
+            fullResponse += text;
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      } else {
+        const stream = provider.client.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8192,
+          system: SYSTEM_PROMPT,
+          messages: chatMessages,
+        });
+
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            fullResponse += event.delta.text;
+            res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+          }
+        }
+      }
+
+      await db.insert(messages).values({
+        conversationId: conv.id,
+        role: "assistant",
+        content: fullResponse,
       });
-      reply = response.output_text ?? "";
-    } else {
-      const response = await provider.client.messages.create({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: message }],
-      });
-      reply = response.content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
-        .join("");
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (err) {
+      req.log.error({ err }, "AI streaming failed");
+      res.write(`data: ${JSON.stringify({ error: "AI সেবায় সমস্যা হয়েছে। আবার চেষ্টা করুন。" })}\n\n`);
+      res.end();
     }
-    res.json({ reply });
-  } catch (err) {
-    req.log.error({ err }, "Quick chat failed");
-    const status =
-      typeof err === "object" && err !== null && "status" in err && err.status === 503
-        ? 503
-        : 500;
-    res.status(status).json({ reply: "AI বিশ্লেষণ এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।" });
-  }
-});
+  };
+}
+
+function createQuickChatHandler(resolveProvider: AiProviderResolver) {
+  return async (req: Request, res: Response): Promise<void> => {
+    const { message } = req.body as { message?: string };
+    if (!message || typeof message !== "string") {
+      res.status(400).json({ error: "message required" });
+      return;
+    }
+    try {
+      const provider = await resolveProvider();
+      if (!provider) {
+        res.status(503).json({ error: "AI সেবা এখন কনফিগার করা নেই।" });
+        return;
+      }
+
+      let reply: string;
+      if (provider.kind === "gemini") {
+        const response = await provider.client.interactions.create({
+          model: GEMINI_MODEL,
+          input: message,
+          system_instruction: SYSTEM_PROMPT,
+          store: false,
+        });
+        reply = response.output_text ?? "";
+      } else {
+        const response = await provider.client.messages.create({
+          model: "claude-sonnet-4-5",
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: message }],
+        });
+        reply = response.content
+          .filter((block) => block.type === "text")
+          .map((block) => block.text)
+          .join("");
+      }
+      res.json({ reply });
+    } catch (err) {
+      req.log.error({ err }, "Quick chat failed");
+      const status =
+        typeof err === "object" && err !== null && "status" in err && err.status === 503
+          ? 503
+          : 500;
+      res.status(status).json({ reply: "AI বিশ্লেষণ এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।" });
+    }
+  };
+}
+
+export function createAnthropicChatRouter(
+  resolveProvider: AiProviderResolver = getAiProvider,
+): IRouter {
+  const chatRouter: IRouter = Router();
+  chatRouter.post(
+    "/anthropic/conversations/:id/messages",
+    requireAuth,
+    createConversationMessageHandler(resolveProvider),
+  );
+  /* ── Quick one-shot chat endpoint (used by test result & subject pages) ── */
+  chatRouter.post("/chat", createQuickChatHandler(resolveProvider));
+  return chatRouter;
+}
+
+router.use(createAnthropicChatRouter());
 
 export default router;
