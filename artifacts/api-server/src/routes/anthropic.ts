@@ -219,18 +219,23 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
 
   try {
     if (provider.kind === "gemini") {
-      const stream = await provider.client.models.generateContentStream({
+      const stream = await provider.client.interactions.create({
         model: GEMINI_MODEL,
-        contents: chatMessages.map((message) => ({
-          role: message.role === "assistant" ? ("model" as const) : ("user" as const),
-          parts: [{ text: message.content }],
+        input: chatMessages.map((message) => ({
+          type: message.role === "assistant" ? ("model_output" as const) : ("user_input" as const),
+          content: [{ type: "text" as const, text: message.content }],
         })),
-        config: { systemInstruction: SYSTEM_PROMPT },
+        system_instruction: SYSTEM_PROMPT,
+        stream: true,
+        store: false,
       });
 
-      for await (const chunk of stream) {
-        const text = chunk.text;
-        if (text) {
+      for await (const event of stream) {
+        if (event.event_type === "error") {
+          throw new Error(event.error?.message ?? "Gemini streaming failed");
+        }
+        if (event.event_type === "step.delta" && event.delta.type === "text") {
+          const text = event.delta.text;
           fullResponse += text;
           res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
         }
@@ -282,12 +287,13 @@ router.post("/chat", async (req, res): Promise<void> => {
 
     let reply: string;
     if (provider.kind === "gemini") {
-      const response = await provider.client.models.generateContent({
+      const response = await provider.client.interactions.create({
         model: GEMINI_MODEL,
-        contents: message,
-        config: { systemInstruction: SYSTEM_PROMPT },
+        input: message,
+        system_instruction: SYSTEM_PROMPT,
+        store: false,
       });
-      reply = response.text ?? "";
+      reply = response.output_text ?? "";
     } else {
       const response = await provider.client.messages.create({
         model: "claude-sonnet-4-5",
@@ -303,7 +309,11 @@ router.post("/chat", async (req, res): Promise<void> => {
     res.json({ reply });
   } catch (err) {
     req.log.error({ err }, "Quick chat failed");
-    res.status(500).json({ reply: "AI বিশ্লেষণ এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।" });
+    const status =
+      typeof err === "object" && err !== null && "status" in err && err.status === 503
+        ? 503
+        : 500;
+    res.status(status).json({ reply: "AI বিশ্লেষণ এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।" });
   }
 });
 
